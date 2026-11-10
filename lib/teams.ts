@@ -6,6 +6,19 @@ export interface TeamPlayer {
   team?: string | null;
 }
 
+export const teamSeparationPairs = [
+  ['เช่', 'พอร์ช'],
+  ['ปกป้อง', 'กังฟู']
+] as const;
+
+export function teamSeparationViolations(assignments: Array<{ name: string; team: unknown }>) {
+  const teamByName = new Map(assignments.map(player => [player.name === 'ป้อง' ? 'ปกป้อง' : player.name, player.team]));
+  return teamSeparationPairs.filter(([first, second]) => {
+    const firstTeam = teamByName.get(first);
+    return firstTeam !== undefined && firstTeam === teamByName.get(second);
+  });
+}
+
 export function balanceTeams(players: TeamPlayer[]): {
   teamA: TeamPlayer[];
   teamB: TeamPlayer[];
@@ -20,6 +33,10 @@ export function balanceTeams(players: TeamPlayer[]): {
     const teamA = chosen.map(index => players[index]);
     const selected = new Set(chosen);
     const teamB = players.filter((_, index) => !selected.has(index));
+    if (teamSeparationViolations([
+      ...teamA.map(player => ({ name: player.name, team: 'A' })),
+      ...teamB.map(player => ({ name: player.name, team: 'B' }))
+    ]).length) return;
     const sumA = teamA.reduce((sum, player) => sum + player.weighted_score, 0);
     const sumB = teamB.reduce((sum, player) => sum + player.weighted_score, 0);
     const difference = Math.abs(sumA - sumB);

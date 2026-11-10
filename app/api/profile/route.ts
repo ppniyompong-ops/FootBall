@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const playerId = Number(request.nextUrl.searchParams.get('id'));
     if (!Number.isInteger(playerId)) return badRequest('รหัสผู้เล่นไม่ถูกต้อง');
     const round = await getActiveRound();
-    const [player, own] = await Promise.all([
+    const [player, own, orderedPlayers] = await Promise.all([
       pool.query(
         `SELECT p.id, p.name, p.positions, r.weighted_score, r.fitness, r.passing,
           r.first_touch, r.shooting, r.ball_control, r.keeper_distribution, r.keeper_cutting,
@@ -25,11 +25,20 @@ export async function GET(request: NextRequest) {
           keeper_distribution, keeper_cutting, keeper_high_ball, keeper_low_ball, keeper_reflex
          FROM player_assessments WHERE round_id=$1 AND evaluator_id=$2 AND player_id=$3`,
         [round.id, viewer.id, playerId]
+      ),
+      pool.query(
+        `SELECT p.id FROM player_rankings r JOIN players p ON p.id = r.player_id
+         WHERE r.round_id = $1 ORDER BY r.weighted_score DESC, p.id`,
+        [round.id]
       )
     ]);
     if (!player.rows[0]) return NextResponse.json({ error: 'ไม่พบผู้เล่น' }, { status: 404 });
+    const position = orderedPlayers.rows.findIndex(row => Number(row.id) === playerId);
+    const award = position === orderedPlayers.rows.length - 1
+      ? "Super Ballon d'Or"
+      : position === orderedPlayers.rows.length - 2 ? "Ballon d'Or" : null;
     return NextResponse.json({
-      player: { ...player.rows[0], weighted_score: Number(player.rows[0].weighted_score || 0) },
+      player: { ...player.rows[0], weighted_score: Number(player.rows[0].weighted_score || 0), award },
       myAssessment: own.rows[0] || null
     }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return apiError(error); }

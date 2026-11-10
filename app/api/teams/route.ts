@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { currentPlayer } from '@/lib/auth';
 import { apiError, unauthorized } from '@/lib/api';
 import { getActiveRound, pool } from '@/lib/db';
-import { balanceTeams, type TeamPlayer } from '@/lib/teams';
+import { balanceTeams, teamSeparationViolations, type TeamPlayer } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -19,7 +19,8 @@ export async function GET() {
     );
     const players: TeamPlayer[] = rows.map(player => ({ ...player, id: Number(player.id), weighted_score: Number(player.weighted_score || 0) }));
     const saved = players.filter(player => player.team === 'A' || player.team === 'B');
-    if (saved.length === players.length) {
+    const savedAssignments = players.map(player => ({ name: player.name, team: player.team }));
+    if (saved.length === players.length && teamSeparationViolations(savedAssignments).length === 0) {
       const teamA = players.filter(player => player.team === 'A');
       const teamB = players.filter(player => player.team === 'B');
       const sumA = teamA.reduce((sum, player) => sum + player.weighted_score, 0);

@@ -60,6 +60,16 @@ h1, h2, h3 { line-height: 1.35; letter-spacing: 0; }
 .admin-team-player button { width: 34px; height: 32px; border: 1px solid #354a30; border-radius: 9px; color: var(--lime); background: #1b2a1b; font-size: 16px; }
 .admin-team-player button:hover { background: #2a3c23; }
 .admin-save-state { margin: -8px 0 15px; }
+.assessment-state { display: inline-flex; align-items: center; border: 1px solid transparent; border-radius: 999px; padding: 4px 7px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+.assessment-state.complete, .assessment-status.complete { color: #c9f28a; background: #24341d; border-color: #435b31; }
+.assessment-state.incomplete, .assessment-status.incomplete { color: #b2bdb4; background: #1c2820; border-color: #354239; }
+.mini-player .assessment-state { font-size: 8px; padding: 3px 6px; }
+.assessment-status { display: inline-flex; align-items: center; border: 1px solid transparent; border-radius: 999px; padding: 4px 7px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+.assessment-arrow { color: var(--lime); font-size: 13px; }
+.table-player-name { display: grid; gap: 3px; }
+.fun-award { width: fit-content; border: 1px solid #65562a; border-radius: 999px; padding: 3px 7px; background: #332d1b; color: #f0d77c; font-size: 8px; font-weight: 800; line-height: 1.3; white-space: nowrap; }
+.fun-award.super-award { border-color: #51467d; background: #29243f; color: #d0c3ff; }
+.profile-award { display: inline-flex; margin-top: 6px; }
 @media(max-width:760px) {
   .admin-topbar { min-height: 68px; padding: 10px 15px; }
   .admin-brand .brand-mark { width: 34px; height: 34px; }

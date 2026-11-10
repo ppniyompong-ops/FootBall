@@ -22,7 +22,10 @@ export async function GET() {
       const weightedScore = Number(player.weighted_score);
       if (previous === null || weightedScore !== previous) rank = index + 1;
       previous = weightedScore;
-      return { ...player, weighted_score: weightedScore, rank };
+      const award = index === rows.length - 1
+        ? "Super Ballon d'Or"
+        : index === rows.length - 2 ? "Ballon d'Or" : null;
+      return { ...player, weighted_score: weightedScore, rank, award };
     });
     return NextResponse.json({ round, ranking }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return apiError(error); }

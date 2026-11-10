@@ -14,6 +14,7 @@ const goalkeeperCriteria = [
 ];
 const isGoalkeeper = player => /(^|[/,\s])GK($|[/,\s])/i.test(String(player?.positions || ''));
 const criteriaFor = player => isGoalkeeper(player) ? goalkeeperCriteria : playerCriteria;
+const teamSeparationPairs = [['เช่', 'พอร์ช'], ['ปกป้อง', 'กังฟู']];
 const loginView = document.querySelector('#loginView');
 const appView = document.querySelector('#appView');
 const adminView = document.querySelector('#adminView');
@@ -124,7 +125,7 @@ async function renderDashboard() {
       <article class="stat-card accent-card"><span class="stat-label">ประเมินแล้ว</span><strong>${summary.completed}<i>/${summary.total}</i></strong><small>เพื่อนที่คุณให้คะแนน</small></article>
       <article class="stat-card"><span class="stat-label">รอบประเมิน</span><strong class="round-stat">${esc(summary.round.title)}</strong><small>คะแนนแก้ไขได้ตลอดรอบ</small></article>`;
     const percent = Math.round(summary.completed / summary.total * 100);
-    document.querySelector('#progressContent').innerHTML = `<div class="progress-line"><div class="progress-track"><span style="width:${percent}%"></span></div><b>${percent}%</b></div><p class="muted">ส่งแล้ว ${summary.completed} จาก ${summary.total} คน</p><div class="mini-player-list">${players.slice(0, 6).map(player => `<button class="mini-player ${assessments.has(player.id) ? 'done' : ''}" data-assess="${player.id}"><span>${esc(player.name)}</span><b>${assessments.has(player.id) ? '✓' : '+'}</b></button>`).join('')}<button class="mini-player more-player" data-go="assessment">ประเมินเพื่อนคนอื่น <b>→</b></button></div>`;
+    document.querySelector('#progressContent').innerHTML = `<div class="progress-line"><div class="progress-track"><span style="width:${percent}%"></span></div><b>${percent}%</b></div><p class="muted">ส่งแล้ว ${summary.completed} จาก ${summary.total} คน</p><div class="mini-player-list">${players.slice(0, 6).map(player => `<button class="mini-player ${assessments.has(player.id) ? 'done' : ''}" data-assess="${player.id}"><span>${esc(player.name)}</span><span class="assessment-state ${assessments.has(player.id) ? 'complete' : 'incomplete'}">${assessments.has(player.id) ? 'ประเมินแล้ว' : 'ยังไม่ประเมิน'}</span></button>`).join('')}<button class="mini-player more-player" data-go="assessment">ประเมินเพื่อนคนอื่น <b>→</b></button></div>`;
     document.querySelector('#dashboardRanking').innerHTML = rankingTable(ranking.slice(0, 5), false);
     document.querySelectorAll('[data-assess]').forEach(button => button.addEventListener('click', () => openAssessment(Number(button.dataset.assess))));
     document.querySelectorAll('[data-player]').forEach(button => button.addEventListener('click', () => openProfile(Number(button.dataset.player))));
@@ -134,7 +135,7 @@ async function renderDashboard() {
 
 function rankingTable(rows, showCount = true) {
   if (!rows.length) return '<div class="empty-state">ยังไม่มีข้อมูลอันดับ</div>';
-  return `<table><thead><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ตำแหน่ง</th><th>คะแนน</th>${showCount ? '<th>ผู้ประเมิน</th>' : ''}</tr></thead><tbody>${rows.map(player => `<tr class="clickable-row" data-player="${player.id}"><td><span class="rank-badge ${player.rank <= 3 ? `top-${player.rank}` : ''}">${String(player.rank).padStart(2, '0')}</span></td><td><span class="table-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><b>${esc(player.name)}</b>${player.id === currentPlayer.id ? '<em>YOU</em>' : ''}</span></td><td><span class="position-tag">${esc(player.positions)}</span></td><td><b class="score-cell">${score(player.weighted_score)}</b></td>${showCount ? `<td class="muted">${player.assessor_count}</td>` : ''}</tr>`).join('')}</tbody></table>`;
+  return `<table><thead><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ตำแหน่ง</th><th>คะแนน</th>${showCount ? '<th>ผู้ประเมิน</th>' : ''}</tr></thead><tbody>${rows.map(player => `<tr class="clickable-row" data-player="${player.id}"><td><span class="rank-badge ${player.rank <= 3 ? `top-${player.rank}` : ''}">${String(player.rank).padStart(2, '0')}</span></td><td><span class="table-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="table-player-name"><b>${esc(player.name)}</b>${player.award ? `<small class="fun-award ${player.award === 'Super Ballon d\'Or' ? 'super-award' : ''}">${esc(player.award)}</small>` : ''}</span>${player.id === currentPlayer.id ? '<em>YOU</em>' : ''}</span></td><td><span class="position-tag">${esc(player.positions)}</span></td><td><b class="score-cell">${score(player.weighted_score)}</b></td>${showCount ? `<td class="muted">${player.assessor_count}</td>` : ''}</tr>`).join('')}</tbody></table>`;
 }
 
 async function renderRanking() {
@@ -150,7 +151,7 @@ async function renderRanking() {
 
 function assessmentCard(player) {
   const saved = assessments.get(player.id);
-  return `<button class="assessment-player ${saved ? 'assessed' : ''}" data-assess="${player.id}"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="assessment-player-info"><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><span class="assessment-status">${saved ? 'แก้ไขคะแนน' : 'ประเมิน'} <b>→</b></span></button>`;
+  return `<button class="assessment-player ${saved ? 'assessed' : ''}" data-assess="${player.id}"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="assessment-player-info"><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><span class="assessment-status ${saved ? 'complete' : 'incomplete'}">${saved ? 'ประเมินแล้ว' : 'ยังไม่ประเมิน'}</span><b class="assessment-arrow">→</b></button>`;
 }
 
 async function renderAssessment() {
@@ -214,7 +215,7 @@ async function openProfile(playerId) {
     const data = await api(`/api/profile?id=${playerId}`);
     const player = data.player;
     const criteria = criteriaFor(player);
-    document.querySelector('#profileContent').innerHTML = `<p class="eyebrow">PLAYER PROFILE</p><div class="profile-heading"><span class="profile-avatar">${esc(player.name.slice(0,1))}</span><div><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span></div><b class="profile-score">${score(player.weighted_score)}<small>/ 10</small></b></div><p class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน · ${player.assessor_count} ผู้ประเมิน</p><div class="profile-stats">${criteria.map(item => `<div><span>${item.label}</span><b>${score(player[item.storage])}</b></div>`).join('')}</div>${data.myAssessment ? '<p class="your-rating-note">คุณได้ประเมินผู้เล่นคนนี้แล้ว</p>' : player.id === currentPlayer.id ? '<p class="your-rating-note">โปรไฟล์ของคุณจะแสดงค่าเฉลี่ยจากเพื่อน</p>' : '<p class="your-rating-note">คุณยังไม่ได้ประเมินผู้เล่นคนนี้</p>'}`;
+    document.querySelector('#profileContent').innerHTML = `<p class="eyebrow">PLAYER PROFILE</p><div class="profile-heading"><span class="profile-avatar">${esc(player.name.slice(0,1))}</span><div><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span>${player.award ? `<small class="fun-award profile-award ${player.award === 'Super Ballon d\'Or' ? 'super-award' : ''}">${esc(player.award)}</small>` : ''}</div><b class="profile-score">${score(player.weighted_score)}<small>/ 10</small></b></div><p class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน · ${player.assessor_count} ผู้ประเมิน</p><div class="profile-stats">${criteria.map(item => `<div><span>${item.label}</span><b>${score(player[item.storage])}</b></div>`).join('')}</div>${data.myAssessment ? '<p class="your-rating-note">คุณได้ประเมินผู้เล่นคนนี้แล้ว</p>' : player.id === currentPlayer.id ? '<p class="your-rating-note">โปรไฟล์ของคุณจะแสดงค่าเฉลี่ยจากเพื่อน</p>' : '<p class="your-rating-note">คุณยังไม่ได้ประเมินผู้เล่นคนนี้</p>'}`;
     profileDialog.showModal();
   } catch (error) { toast(error.message, true); }
 }
@@ -274,6 +275,12 @@ function renderAdminTeamBoard() {
     const targetCount = adminTeamAssignments.filter(item => item.team === targetTeam).length;
     const sourceCount = adminTeamAssignments.filter(item => item.team === player.team).length;
     if (Math.abs((sourceCount - 1) - (targetCount + 1)) > 2) return toast('จำนวนผู้เล่นสองทีมต้องต่างกันไม่เกิน 2 คนระหว่างการจัด', true);
+    const targetNames = new Set(adminTeamAssignments.filter(item => item.team === targetTeam && item.id !== player.id).map(item => item.name === 'ป้อง' ? 'ปกป้อง' : item.name));
+    const playerName = player.name === 'ป้อง' ? 'ปกป้อง' : player.name;
+    const conflict = teamSeparationPairs.find(([first, second]) =>
+      (playerName === first && targetNames.has(second)) || (playerName === second && targetNames.has(first))
+    );
+    if (conflict) return toast(`${conflict[0]} กับ ${conflict[1]} ต้องอยู่คนละทีม`, true);
     player.team = targetTeam;
     renderAdminTeamBoard();
   }));
