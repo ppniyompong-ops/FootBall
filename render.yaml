@@ -20,13 +20,3 @@ services:
       - key: NODE_ENV
         value: production
       - fromGroup: football-neon-secrets
-
-  - type: cron
-    name: football-ranking-refresh
-    runtime: node
-    plan: starter
-    schedule: "0 * * * *"
-    buildCommand: npm install
-    startCommand: npm run cron
-    envVars:
-      - fromGroup: football-neon-secrets

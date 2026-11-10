@@ -1,0 +1,27 @@
+name: Refresh cached rankings
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install database driver
+        run: npm install --prefix scripts --no-package-lock --omit=dev
+      - name: Refresh ranking cache
+        run: node scripts/refresh-rankings.mjs
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
