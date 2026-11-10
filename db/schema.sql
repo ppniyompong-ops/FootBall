@@ -13,6 +13,20 @@ ALTER TABLE players
 CREATE UNIQUE INDEX IF NOT EXISTS players_name_unique
   ON players (name);
 
+-- Older installations may still require the legacy `pos` column on inserts.
+DO $migration$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'players'
+      AND column_name = 'pos'
+  ) THEN
+    EXECUTE 'ALTER TABLE players ALTER COLUMN pos SET DEFAULT ''ไม่ระบุ''';
+  END IF;
+END
+$migration$;
+
 CREATE TABLE IF NOT EXISTS assessment_rounds (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
