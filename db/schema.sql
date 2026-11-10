@@ -50,5 +50,29 @@ CREATE TABLE IF NOT EXISTS player_rankings (
   PRIMARY KEY (round_id, player_id)
 );
 
+-- Bring forward unique keys that were absent from some legacy installations.
+-- Keep the most recently updated assessment if an old database has duplicates.
+DELETE FROM player_assessments older
+USING player_assessments newer
+WHERE older.round_id = newer.round_id
+  AND older.evaluator_id = newer.evaluator_id
+  AND older.player_id = newer.player_id
+  AND (older.updated_at < newer.updated_at
+       OR (older.updated_at = newer.updated_at AND older.ctid < newer.ctid));
+
+CREATE UNIQUE INDEX IF NOT EXISTS player_assessments_round_evaluator_player_unique
+  ON player_assessments (round_id, evaluator_id, player_id);
+
+-- Rankings are a cache derived from assessments, so duplicate cache rows can
+-- be discarded safely before adding the key used by the upsert query.
+DELETE FROM player_rankings older
+USING player_rankings newer
+WHERE older.round_id = newer.round_id
+  AND older.player_id = newer.player_id
+  AND older.ctid < newer.ctid;
+
+CREATE UNIQUE INDEX IF NOT EXISTS player_rankings_round_player_unique
+  ON player_rankings (round_id, player_id);
+
 CREATE INDEX IF NOT EXISTS assessments_by_round_player
   ON player_assessments (round_id, player_id);
