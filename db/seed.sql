@@ -3,7 +3,7 @@ INSERT INTO players (name, positions) VALUES
   ('พอร์ช', 'LW/ST'),
   ('โช', 'ST/CDM'),
   ('อันดา', 'RB/CB'),
-  ('แทน', 'CDM/GK'),
+  ('แทน', 'CDM/CM'),
   ('เก้า', 'CAM/LW'),
   ('กาย', 'LB/CDM'),
   ('ปอง', 'RB/RW'),
