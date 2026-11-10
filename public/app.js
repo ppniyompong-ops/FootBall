@@ -265,8 +265,12 @@ let adminTeamAssignments = [];
 function renderAdminTeamBoard() {
   const node = document.querySelector('#adminTeamBoard');
   if (!node) return;
-  const drawColumn = (team, color, title) => `<section class="admin-team-column ${color}"><header><h2>${title}</h2><span>${adminTeamAssignments.filter(item => item.team === team).length} คน</span></header><div class="admin-team-list">${adminTeamAssignments.filter(item => item.team === team).map(player => `<article class="admin-team-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><button type="button" data-move-player="${player.id}" data-to-team="${team === 'A' ? 'B' : 'A'}" aria-label="ย้าย ${esc(player.name)} ไปอีกทีม">⇄</button></article>`).join('')}</div></section>`;
-  node.innerHTML = `${drawColumn('A', 'green-team', 'ทีม A')}${drawColumn('B', 'light-team', 'ทีม B')}`;
+  const teamA = adminTeamAssignments.filter(item => item.team === 'A');
+  const teamB = adminTeamAssignments.filter(item => item.team === 'B');
+  const sumA = teamA.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0);
+  const sumB = teamB.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0);
+  const drawColumn = (team, color, title, total) => `<section class="admin-team-column ${color}"><header><h2>${title}</h2><div class="admin-team-total"><strong>${score(total)}</strong><span>${adminTeamAssignments.filter(item => item.team === team).length} คน</span></div></header><div class="admin-team-list">${adminTeamAssignments.filter(item => item.team === team).map(player => `<article class="admin-team-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><b class="admin-team-player-score">${score(player.weighted_score)}</b><button type="button" data-move-player="${player.id}" data-to-team="${team === 'A' ? 'B' : 'A'}" aria-label="ย้าย ${esc(player.name)} ไปอีกทีม">⇄</button></article>`).join('')}</div></section>`;
+  node.innerHTML = `${drawColumn('A', 'green-team', 'ทีม A', sumA)}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>คะแนนต่างกัน</small><b>${score(Math.abs(sumA - sumB))}</b></div></div>${drawColumn('B', 'light-team', 'ทีม B', sumB)}`;
   node.querySelectorAll('[data-move-player]').forEach(button => button.addEventListener('click', () => {
     const playerId = Number(button.dataset.movePlayer);
     const targetTeam = button.dataset.toTeam;

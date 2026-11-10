@@ -48,11 +48,11 @@ export async function GET() {
     const round = await getActiveRound();
     const players = await getPlayers(round.id);
     const saved = players.filter(player => player.team === 'A' || player.team === 'B');
-    const savedAssignments = players.map(player => ({ id: player.id, name: player.name, positions: player.positions, team: player.team as 'A' | 'B' }));
+    const savedAssignments = players.map(player => ({ id: player.id, name: player.name, positions: player.positions, weighted_score: player.weighted_score, team: player.team as 'A' | 'B' }));
     const savedIsValid = saved.length === players.length && teamSeparationViolations(savedAssignments).length === 0;
     const balanced = savedIsValid ? null : balanceTeams(players);
     const assignments = balanced
-      ? [...balanced.teamA.map(player => ({ id: player.id, name: player.name, positions: player.positions, team: 'A' as const })), ...balanced.teamB.map(player => ({ id: player.id, name: player.name, positions: player.positions, team: 'B' as const }))]
+      ? [...balanced.teamA.map(player => ({ id: player.id, name: player.name, positions: player.positions, weighted_score: player.weighted_score, team: 'A' as const })), ...balanced.teamB.map(player => ({ id: player.id, name: player.name, positions: player.positions, weighted_score: player.weighted_score, team: 'B' as const }))]
       : savedAssignments;
     return NextResponse.json({ round, customized: savedIsValid, assignments }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return apiError(error); }
