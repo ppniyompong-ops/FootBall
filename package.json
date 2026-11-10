@@ -1,0 +1,33 @@
+{
+  "name": "football-class-assessment",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "cron": "node -r dotenv/config scripts/refresh-rankings.mjs",
+    "db:init": "node -r dotenv/config scripts/init-db.mjs",
+    "round:new": "node -r dotenv/config scripts/create-round.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "next": "^15.5.9",
+    "pg": "^8.16.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,32 @@
+envVarGroups:
+  - name: football-neon-secrets
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_SECRET
+        generateValue: true
+      - key: SHARED_PASSWORD
+        value: "1234"
+
+services:
+  - type: web
+    name: football-class
+    runtime: node
+    plan: starter
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - fromGroup: football-neon-secrets
+
+  - type: cron
+    name: football-ranking-refresh
+    runtime: node
+    plan: starter
+    schedule: "0 * * * *"
+    buildCommand: npm install
+    startCommand: npm run cron
+    envVars:
+      - fromGroup: football-neon-secrets
