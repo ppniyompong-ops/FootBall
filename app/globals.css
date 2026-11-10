@@ -60,9 +60,6 @@ h1, h2, h3 { line-height: 1.35; letter-spacing: 0; }
 .admin-team-player button { width: 34px; height: 32px; border: 1px solid #354a30; border-radius: 9px; color: var(--lime); background: #1b2a1b; font-size: 16px; }
 .admin-team-player button:hover { background: #2a3c23; }
 .admin-save-state { margin: -8px 0 15px; }
-.team-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.team-move-button { border: 1px solid #354a30; border-radius: 8px; background: #1b2a1b; color: var(--lime); padding: 6px 8px; font-size: 10px; font-weight: 700; white-space: nowrap; }
-.team-move-button:hover { background: #2a3c23; }
 @media(max-width:760px) {
   .admin-topbar { min-height: 68px; padding: 10px 15px; }
   .admin-brand .brand-mark { width: 34px; height: 34px; }
@@ -73,5 +70,4 @@ h1, h2, h3 { line-height: 1.35; letter-spacing: 0; }
   .admin-tabs { display: grid; grid-template-columns: 1fr 1fr; }
   .admin-tab { padding-inline: 8px; }
   .admin-page-heading { align-items: flex-start; }
-  .team-actions { justify-content: flex-start; }
 }

@@ -25,9 +25,6 @@ let activeAdminPage = 'assessments';
 let activePage = 'dashboard';
 let players = [];
 let assessments = new Map();
-let teamRun = 0;
-let teamAssignments = [];
-let teamEditing = false;
 let toastTimeout;
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
@@ -196,69 +193,20 @@ function openAssessment(playerId) {
 }
 
 async function renderTeams() {
-  teamRun = 0;
-  teamEditing = false;
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">BALANCED TEAMS</p><h1>จัดทีมฟุตบอล</h1><p class="muted">ทุกคนช่วยกันปรับทีมได้ แล้วบันทึกทีมไว้ให้ทั้งห้อง</p></div><div class="team-actions"><button id="editTeamsButton" class="button secondary">ปรับทีม</button><button id="saveTeamsButton" class="button primary hidden">บันทึกทีม</button><button id="cancelTeamEdits" class="button secondary hidden">ยกเลิก</button><button id="rerollTeams" class="button secondary">สุ่มใหม่ <span>⟳</span></button></div></section><div id="teamResult" class="team-result"><div class="panel loading-card">กำลังจัดทีม…</div></div>`;
-  document.querySelector('#editTeamsButton').addEventListener('click', () => { teamEditing = true; updateTeamActionButtons(); renderTeamResult(); });
-  document.querySelector('#saveTeamsButton').addEventListener('click', savePlayerTeamAssignments);
-  document.querySelector('#cancelTeamEdits').addEventListener('click', () => { teamEditing = false; teamRun = 0; updateTeamActionButtons(); loadTeams(); });
-  document.querySelector('#rerollTeams').addEventListener('click', () => { teamEditing = false; teamRun++; updateTeamActionButtons(); loadTeams(); });
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">BALANCED TEAMS</p><h1>ทีมของห้อง</h1><p class="muted">ดูทีมที่แอดมินจัดไว้</p></div></section><div id="teamResult" class="team-result"><div class="panel loading-card">กำลังโหลดทีม…</div></div>`;
   await loadTeams();
-}
-
-function updateTeamActionButtons() {
-  document.querySelector('#editTeamsButton')?.classList.toggle('hidden', teamEditing);
-  document.querySelector('#saveTeamsButton')?.classList.toggle('hidden', !teamEditing);
-  document.querySelector('#cancelTeamEdits')?.classList.toggle('hidden', !teamEditing);
-  document.querySelector('#rerollTeams')?.classList.toggle('hidden', teamEditing);
 }
 
 async function loadTeams() {
   const node = document.querySelector('#teamResult');
   if (!node) return;
-  node.innerHTML = '<div class="panel loading-card">กำลังคำนวณทีมที่สมดุล…</div>';
+  node.innerHTML = '<div class="panel loading-card">กำลังโหลดทีม…</div>';
   try {
-    const data = await api(`/api/teams?run=${teamRun}`);
-    teamAssignments = [...data.teamA.map(player => ({ ...player, team: 'A' })), ...data.teamB.map(player => ({ ...player, team: 'B' }))];
-    renderTeamResult();
+    const data = await api('/api/teams');
+    const drawTeam = (team, name, color, total) => `<article class="team-card ${color}"><header><div><span class="eyebrow">${name === 'ทีม A' ? 'GREEN SQUAD' : 'WHITE SQUAD'}</span><h2>${name}</h2></div><div class="team-score"><b>${score(total)}</b><small>คะแนนรวม</small></div></header><div class="team-player-list">${team.map((player,index) => `<div class="team-player"><span class="team-number">${String(index+1).padStart(2,'0')}</span><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="team-player-info"><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><b class="team-player-score">${score(player.weighted_score)}</b></div>`).join('')}</div><footer>${team.length} ผู้เล่น <span>ตำแหน่งไม่จำกัด</span></footer></article>`;
+    const difference = Math.abs(data.sumA - data.sumB);
+    node.innerHTML = `${drawTeam(data.teamA,'ทีม A','green-team',data.sumA)}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>ส่วนต่าง</small><b>${score(difference)}</b></div></div>${drawTeam(data.teamB,'ทีม B','light-team',data.sumB)}`;
   } catch (error) { node.innerHTML = `<div class="panel empty-state">${esc(error.message)}</div>`; }
-}
-
-function renderTeamResult() {
-  const node = document.querySelector('#teamResult');
-  if (!node) return;
-  const teamA = teamAssignments.filter(player => player.team === 'A');
-  const teamB = teamAssignments.filter(player => player.team === 'B');
-  const sumA = teamA.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0);
-  const sumB = teamB.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0);
-  const drawTeam = (team, label, color) => `<article class="team-card ${color}"><header><div><span class="eyebrow">${label === 'ทีม A' ? 'GREEN SQUAD' : 'WHITE SQUAD'}</span><h2>${label}</h2></div><div class="team-score"><b>${score(team.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0))}</b><small>คะแนนรวม</small></div></header><div class="team-player-list">${team.map((player,index) => `<div class="team-player"><span class="team-number">${String(index+1).padStart(2,'0')}</span><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="team-player-info"><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span>${teamEditing ? `<button class="team-move-button" data-move-id="${player.id}" data-to-team="${player.team === 'A' ? 'B' : 'A'}">ย้าย ↔</button>` : `<b class="team-player-score">${score(player.weighted_score)}</b>`}</div>`).join('')}</div><footer>${team.length} ผู้เล่น <span>ตำแหน่งไม่จำกัด</span></footer></article>`;
-  const difference = Math.abs(sumA - sumB);
-  node.innerHTML = `${drawTeam(teamA,'ทีม A','green-team')}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>ส่วนต่าง</small><b>${score(difference)}</b></div></div>${drawTeam(teamB,'ทีม B','light-team')}`;
-  if (!teamEditing) return;
-  node.querySelectorAll('[data-move-id]').forEach(button => button.addEventListener('click', () => {
-    const player = teamAssignments.find(item => item.id === Number(button.dataset.moveId));
-    if (!player) return;
-    const sourceCount = teamAssignments.filter(item => item.team === player.team).length;
-    const targetTeam = button.dataset.toTeam;
-    const targetCount = teamAssignments.filter(item => item.team === targetTeam).length;
-    if (Math.abs((sourceCount - 1) - (targetCount + 1)) > 2) return toast('ย้ายผู้เล่นกลับอีกฝั่งเพื่อให้จำนวนทีมสมดุล', true);
-    player.team = targetTeam;
-    renderTeamResult();
-  }));
-}
-
-async function savePlayerTeamAssignments(event) {
-  const button = event.currentTarget;
-  button.disabled = true;
-  try {
-    await api('/api/teams', { method: 'PUT', body: JSON.stringify({ assignments: teamAssignments.map(({ id, team }) => ({ id, team })) }) });
-    teamEditing = false;
-    teamRun = 0;
-    updateTeamActionButtons();
-    toast('บันทึกทีมให้ทุกคนแล้ว');
-    await loadTeams();
-  } catch (error) { toast(error.message, true); }
-  finally { button.disabled = false; }
 }
 
 async function openProfile(playerId) {
