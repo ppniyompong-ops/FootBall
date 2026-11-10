@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS players (
 ALTER TABLE players
   ADD COLUMN IF NOT EXISTS positions TEXT NOT NULL DEFAULT 'ไม่ระบุ';
 
+CREATE UNIQUE INDEX IF NOT EXISTS players_name_unique
+  ON players (name);
+
 CREATE TABLE IF NOT EXISTS assessment_rounds (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
