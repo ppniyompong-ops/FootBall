@@ -5,6 +5,11 @@ CREATE TABLE IF NOT EXISTS players (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Upgrade databases created by earlier app versions where players already
+-- exists but does not yet have a positions column.
+ALTER TABLE players
+  ADD COLUMN IF NOT EXISTS positions TEXT NOT NULL DEFAULT 'ไม่ระบุ';
+
 CREATE TABLE IF NOT EXISTS assessment_rounds (
   id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
