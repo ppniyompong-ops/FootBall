@@ -11,7 +11,8 @@ export async function GET() {
     if (!viewer) return unauthorized();
     const round = await getActiveRound();
     const { rows } = await pool.query(
-      `SELECT player_id, fitness, passing, first_touch, shooting, ball_control, updated_at
+      `SELECT player_id, fitness, passing, first_touch, shooting, ball_control,
+         keeper_distribution, keeper_cutting, keeper_high_ball, keeper_low_ball, keeper_reflex, updated_at
        FROM player_assessments WHERE round_id = $1 AND evaluator_id = $2`,
       [round.id, viewer.id]
     );

@@ -9,7 +9,7 @@ INSERT INTO players (name, positions) VALUES
   ('ปอง', 'RB/RW'),
   ('เนส', 'CB/CDM'),
   ('ที', 'LWF/ST'),
-  ('ป้อง', 'GK/CM'),
+  ('ปกป้อง', 'GK/CM'),
   ('กังฟู', 'GK/CM'),
   ('เช่', 'AMF/ST'),
   ('แผน', 'CDM/CAM'),

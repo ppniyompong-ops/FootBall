@@ -14,6 +14,9 @@ export function apiError(error: unknown) {
   if (detail.includes('APP_SECRET')) {
     return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า APP_SECRET ใน Render' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }
+  if (detail.includes('ADMIN_PASSWORD')) {
+    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า ADMIN_PASSWORD ใน Render' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
   if (['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', '28P01'].includes(code)) {
     return NextResponse.json({ error: 'เชื่อมต่อฐานข้อมูลไม่สำเร็จ ตรวจสอบ DATABASE_URL และสิทธิ์การเชื่อมต่อใน Render' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }

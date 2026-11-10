@@ -15,12 +15,14 @@ export async function GET(request: NextRequest) {
     const [player, own] = await Promise.all([
       pool.query(
         `SELECT p.id, p.name, p.positions, r.weighted_score, r.fitness, r.passing,
-          r.first_touch, r.shooting, r.ball_control, r.assessor_count
+          r.first_touch, r.shooting, r.ball_control, r.keeper_distribution, r.keeper_cutting,
+          r.keeper_high_ball, r.keeper_low_ball, r.keeper_reflex, r.assessor_count
          FROM players p LEFT JOIN player_rankings r ON r.player_id = p.id AND r.round_id = $1
          WHERE p.id = $2`, [round.id, playerId]
       ),
       pool.query(
-        `SELECT fitness, passing, first_touch, shooting, ball_control
+        `SELECT fitness, passing, first_touch, shooting, ball_control,
+          keeper_distribution, keeper_cutting, keeper_high_ball, keeper_low_ball, keeper_reflex
          FROM player_assessments WHERE round_id=$1 AND evaluator_id=$2 AND player_id=$3`,
         [round.id, viewer.id, playerId]
       )

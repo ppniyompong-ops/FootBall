@@ -1,15 +1,27 @@
-const criteria = [
-  { key: 'fitness', label: 'ความฟิต', en: 'FITNESS', weight: '× 1' },
-  { key: 'passing', label: 'การจ่ายบอล', en: 'PASSING', weight: '× 1' },
-  { key: 'firstTouch', label: 'การรับบอล', en: 'FIRST TOUCH', weight: '× 1' },
-  { key: 'shooting', label: 'การยิงประตู', en: 'SHOOTING', weight: '× 1.5' },
-  { key: 'ballControl', label: 'การควบคุมบอล', en: 'BALL CONTROL', weight: '× 1.5' }
+const playerCriteria = [
+  { key: 'fitness', storage: 'fitness', label: 'ความฟิต', en: 'FITNESS' },
+  { key: 'passing', storage: 'passing', label: 'การจ่ายบอล', en: 'PASSING' },
+  { key: 'firstTouch', storage: 'first_touch', label: 'การรับบอล', en: 'FIRST TOUCH' },
+  { key: 'shooting', storage: 'shooting', label: 'การยิงประตู', en: 'SHOOTING' },
+  { key: 'ballControl', storage: 'ball_control', label: 'การควบคุมบอล', en: 'BALL CONTROL' }
 ];
+const goalkeeperCriteria = [
+  { key: 'distribution', storage: 'keeper_distribution', label: 'โยนบอลและเตะเปิดเกม', en: 'DISTRIBUTION' },
+  { key: 'cutting', storage: 'keeper_cutting', label: 'ออกมาตัดบอล', en: 'CLAIMING' },
+  { key: 'highBall', storage: 'keeper_high_ball', label: 'รับลูกสูงแบบสามเหลี่ยม', en: 'HIGH BALL' },
+  { key: 'lowBall', storage: 'keeper_low_ball', label: 'รับลูกเลียด', en: 'LOW BALL' },
+  { key: 'reflex', storage: 'keeper_reflex', label: 'ปฏิกิริยาเซฟลูกยิง', en: 'REFLEX SAVES' }
+];
+const isGoalkeeper = player => /(^|[/,\s])GK($|[/,\s])/i.test(String(player?.positions || ''));
+const criteriaFor = player => isGoalkeeper(player) ? goalkeeperCriteria : playerCriteria;
 const loginView = document.querySelector('#loginView');
 const appView = document.querySelector('#appView');
+const adminView = document.querySelector('#adminView');
 const content = document.querySelector('#pageContent');
 const profileDialog = document.querySelector('#profileDialog');
 let currentPlayer = null;
+let currentAdmin = null;
+let activeAdminPage = 'assessments';
 let activePage = 'dashboard';
 let players = [];
 let assessments = new Map();
@@ -25,7 +37,7 @@ async function api(path, options = {}) {
     headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...options.headers }
   });
   const result = await response.json().catch(() => ({}));
-  if (response.status === 401 && path !== '/api/login') showLogin();
+  if (response.status === 401 && !['/api/login', '/api/admin/login'].includes(path)) showLogin();
   if (!response.ok) throw new Error(result.error || 'เกิดข้อผิดพลาด ลองอีกครั้ง');
   return result;
 }
@@ -41,8 +53,15 @@ function toast(message, error = false) {
 
 function showLogin() {
   currentPlayer = null;
+  currentAdmin = null;
   appView.classList.add('hidden');
+  adminView.classList.add('hidden');
   loginView.classList.remove('hidden');
+  document.querySelector('#loginForm').classList.remove('hidden');
+  document.querySelector('#adminLoginToggle').classList.remove('hidden');
+  document.querySelector('#adminLoginForm').classList.add('hidden');
+  document.querySelector('#adminPassword').value = '';
+  document.querySelector('#adminLoginError').textContent = '';
 }
 
 async function startApp(player) {
@@ -96,7 +115,6 @@ async function renderDashboard() {
     <section class="stat-grid" id="statGrid"><div class="stat-card loading-card">กำลังโหลดข้อมูล…</div></section>
     <section class="dashboard-grid">
       <article class="panel progress-panel"><div class="panel-head"><div><p class="eyebrow">YOUR CHECKLIST</p><h2>ความคืบหน้าการประเมิน</h2></div><span class="panel-icon">◎</span></div><div id="progressContent" class="progress-content">กำลังโหลด…</div></article>
-      <article class="panel formula-panel"><p class="eyebrow">SCORING FORMULA</p><h2>คะแนนถ่วงน้ำหนัก</h2><div class="formula">(Fit + Pass + Touch + 1.5 Shoot + 1.5 Control) <span>÷ 6</span></div><p class="muted">คะแนนเฉลี่ยของทุกคนในแต่ละด้าน</p><div class="criteria-pills"><span>ยิงประตู <b>×1.5</b></span><span>คุมบอล <b>×1.5</b></span><span>ด้านอื่น <b>×1</b></span></div></article>
     </section>
     <section class="panel compact-ranking"><div class="panel-head"><div><p class="eyebrow">LEADERBOARD</p><h2>อันดับล่าสุด</h2></div><button class="text-button" data-go="ranking">ดูทั้งหมด →</button></div><div id="dashboardRanking" class="table-wrap">กำลังโหลด…</div></section>`;
   bindNavigationButtons();
@@ -105,7 +123,6 @@ async function renderDashboard() {
     document.querySelector('#statGrid').innerHTML = `
       <article class="stat-card"><span class="stat-label">อันดับของคุณ</span><strong>${summary.myRank ? `#${summary.myRank}` : '—'}</strong><small>จากผู้เล่น ${ranking.length} คน</small></article>
       <article class="stat-card accent-card"><span class="stat-label">ประเมินแล้ว</span><strong>${summary.completed}<i>/${summary.total}</i></strong><small>เพื่อนที่คุณให้คะแนน</small></article>
-      <article class="stat-card"><span class="stat-label">คะแนนเฉลี่ยห้อง</span><strong>${score(summary.overallAverage)}</strong><small>Weighted Score</small></article>
       <article class="stat-card"><span class="stat-label">รอบประเมิน</span><strong class="round-stat">${esc(summary.round.title)}</strong><small>คะแนนแก้ไขได้ตลอดรอบ</small></article>`;
     const percent = Math.round(summary.completed / summary.total * 100);
     document.querySelector('#progressContent').innerHTML = `<div class="progress-line"><div class="progress-track"><span style="width:${percent}%"></span></div><b>${percent}%</b></div><p class="muted">ส่งแล้ว ${summary.completed} จาก ${summary.total} คน</p><div class="mini-player-list">${players.slice(0, 6).map(player => `<button class="mini-player ${assessments.has(player.id) ? 'done' : ''}" data-assess="${player.id}"><span>${esc(player.name)}</span><b>${assessments.has(player.id) ? '✓' : '+'}</b></button>`).join('')}<button class="mini-player more-player" data-go="assessment">ประเมินเพื่อนคนอื่น <b>→</b></button></div>`;
@@ -122,10 +139,11 @@ function rankingTable(rows, showCount = true) {
 }
 
 async function renderRanking() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">LEADERBOARD</p><h1>อันดับผู้เล่น</h1><p class="muted">คะแนนเฉลี่ยจากแบบประเมินที่ส่งแล้ว</p></div><div class="round-pill"><span class="live-dot"></span><span id="rankingRound">กำลังโหลด</span></div></section><section class="panel ranking-panel"><div class="ranking-summary"><div><span class="eyebrow">CLASS RANKING</span><b>18 <small>PLAYERS</small></b></div><span class="privacy-note">🔒 ไม่แสดงชื่อผู้ประเมิน</span></div><div id="rankingTable" class="table-wrap">กำลังโหลด…</div><p class="table-footnote">คะแนนเต็ม 10 · คำนวณตามสูตรถ่วงน้ำหนัก</p></section>`;
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">LEADERBOARD</p><h1>อันดับผู้เล่น</h1><p class="muted">คะแนนจากแบบประเมินที่ส่งแล้ว</p></div><div class="round-pill"><span class="live-dot"></span><span id="rankingRound">กำลังโหลด</span></div></section><section class="panel ranking-panel"><div class="ranking-summary"><div><span class="eyebrow">CLASS RANKING</span><b id="rankingPlayerCount">— <small>PLAYERS</small></b></div><span class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน</span></div><div id="rankingTable" class="table-wrap">กำลังโหลด…</div></section>`;
   try {
     const data = await api('/api/ranking');
     document.querySelector('#rankingRound').textContent = data.round.title;
+    document.querySelector('#rankingPlayerCount').innerHTML = `${data.ranking.length} <small>PLAYERS</small>`;
     document.querySelector('#rankingTable').innerHTML = rankingTable(data.ranking);
     document.querySelectorAll('[data-player]').forEach(button => button.addEventListener('click', () => openProfile(Number(button.dataset.player))));
   } catch (error) { toast(error.message, true); }
@@ -137,7 +155,7 @@ function assessmentCard(player) {
 }
 
 async function renderAssessment() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">PLAYER ASSESSMENT</p><h1>ประเมินเพื่อน</h1><p class="muted">ให้คะแนน 1–10 ในแต่ละด้าน คะแนนของคุณจะไม่ระบุตัวตน</p></div><span class="assessment-counter">${assessments.size}/17 <small>คน</small></span></section><div class="assessment-layout"><section class="panel player-select-panel"><div class="panel-head"><div><p class="eyebrow">CLASSMATES</p><h2>เลือกผู้เล่น</h2></div></div><div class="search-wrap"><span>⌕</span><input id="playerSearch" placeholder="ค้นหาชื่อเล่น" autocomplete="off"></div><div id="assessmentList" class="assessment-list"></div></section><section class="panel assessment-form-panel" id="assessmentFormPanel"><div class="empty-form"><div class="empty-ball">◎</div><h2>เลือกเพื่อนเพื่อเริ่มประเมิน</h2><p class="muted">คุณประเมินตัวเองไม่ได้ และแก้ไขคะแนนเดิมได้เสมอ</p></div></section></div>`;
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">PLAYER ASSESSMENT</p><h1>ประเมินเพื่อน</h1><p class="muted">ให้คะแนน 1–10 ในแต่ละด้าน</p></div><span class="assessment-counter">${assessments.size}/${players.length} <small>คน</small></span></section><div class="assessment-layout"><section class="panel player-select-panel"><div class="panel-head"><div><p class="eyebrow">CLASSMATES</p><h2>เลือกผู้เล่น</h2></div></div><div class="search-wrap"><span>⌕</span><input id="playerSearch" placeholder="ค้นหาชื่อเล่น" autocomplete="off"></div><div id="assessmentList" class="assessment-list"></div></section><section class="panel assessment-form-panel" id="assessmentFormPanel"><div class="empty-form"><div class="empty-ball">◎</div><h2>เลือกเพื่อนเพื่อเริ่มประเมิน</h2><p class="muted">คุณประเมินตัวเองไม่ได้ และแก้ไขคะแนนเดิมได้เสมอ</p></div></section></div>`;
   renderAssessmentList(players);
   document.querySelector('#playerSearch').addEventListener('input', event => renderAssessmentList(players.filter(player => player.name.includes(event.target.value.trim()) || player.positions.toLowerCase().includes(event.target.value.trim().toLowerCase()))));
 }
@@ -156,15 +174,9 @@ function openAssessment(playerId) {
   const panel = document.querySelector('#assessmentFormPanel');
   if (!panel) { navTo('assessment'); setTimeout(() => openAssessment(playerId), 0); return; }
   document.querySelectorAll('.assessment-player').forEach(button => button.classList.toggle('selected', Number(button.dataset.assess) === playerId));
-  panel.innerHTML = `<div class="assessment-form-head"><div><p class="eyebrow">${saved ? 'EDIT ASSESSMENT' : 'NEW ASSESSMENT'}</p><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span></div><span class="form-avatar">${esc(player.name.slice(0,1))}</span></div><p class="muted form-intro">ให้คะแนนความสามารถตามที่คุณเห็น คะแนนทั้งหมดจะถูกรวมโดยไม่เปิดเผยผู้ประเมิน</p><form id="assessmentForm"><div class="score-inputs">${criteria.map(item => `<label class="score-input-row"><span><b>${item.label}</b><small>${item.en} · ${item.weight}</small></span><select name="${item.key}" aria-label="${item.label}" required>${Array.from({length:10}, (_, index) => index+1).map(value => `<option value="${value}" ${Number(saved?.[item.key === 'firstTouch' ? 'first_touch' : item.key === 'ballControl' ? 'ball_control' : item.key] || 7) === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>`).join('')}</div><div class="weighted-preview"><span>คะแนนถ่วงน้ำหนัก</span><b id="weightedPreview">— <small>/ 10</small></b></div><div class="form-actions"><button class="button primary full" type="submit">${saved ? 'บันทึกการแก้ไข' : 'ส่งคะแนน'} <span>→</span></button></div><p class="anonymous-hint">🔒 ไม่เปิดเผยชื่อผู้ประเมิน</p></form>`;
+  const criteria = criteriaFor(player);
+  panel.innerHTML = `<div class="assessment-form-head"><div><p class="eyebrow">${saved ? 'EDIT ASSESSMENT' : 'NEW ASSESSMENT'}</p><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span></div><span class="form-avatar">${esc(player.name.slice(0,1))}</span></div><p class="muted form-intro">ให้คะแนนความสามารถของผู้เล่นคนนี้ตามที่คุณเห็น</p><form id="assessmentForm"><div class="score-inputs">${criteria.map(item => `<label class="score-input-row"><span><b>${item.label}</b><small>${item.en}</small></span><select name="${item.key}" aria-label="${item.label}" required>${Array.from({length:10}, (_, index) => index+1).map(value => `<option value="${value}" ${Number(saved?.[item.storage] || 7) === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>`).join('')}</div><div class="form-actions"><button class="button primary full" type="submit">${saved ? 'บันทึกการแก้ไข' : 'ส่งคะแนน'} <span>→</span></button></div><p class="anonymous-hint">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน</p></form>`;
   const form = panel.querySelector('#assessmentForm');
-  const updatePreview = () => {
-    const values = Object.fromEntries(new FormData(form).entries());
-    const calculated = (Number(values.fitness) + Number(values.passing) + Number(values.firstTouch) + 1.5 * Number(values.shooting) + 1.5 * Number(values.ballControl)) / 6;
-    panel.querySelector('#weightedPreview').innerHTML = `${calculated.toFixed(2)} <small>/ 10</small>`;
-  };
-  form.addEventListener('change', updatePreview);
-  updatePreview();
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const submit = form.querySelector('button[type=submit]');
@@ -182,7 +194,7 @@ function openAssessment(playerId) {
 }
 
 async function renderTeams() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">BALANCED TEAMS</p><h1>จัดทีมฟุตบอล</h1><p class="muted">จับคู่ทีมจากคะแนนรวมให้ใกล้เคียงกันที่สุด</p></div><button id="rerollTeams" class="button primary">จัดทีมใหม่ <span>⟳</span></button></section><div id="teamResult" class="team-result"><div class="panel loading-card">กำลังคำนวณทีมที่สมดุล…</div></div><p class="team-note">ใช้คะแนน Weighted Score เป็นหลัก · ตำแหน่งแสดงเพื่อเป็นข้อมูลเท่านั้น</p>`;
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">BALANCED TEAMS</p><h1>จัดทีมฟุตบอล</h1><p class="muted">จัดทีมสองฝั่งให้สมดุล</p></div><button id="rerollTeams" class="button primary">จัดทีมใหม่ <span>⟳</span></button></section><div id="teamResult" class="team-result"><div class="panel loading-card">กำลังจัดทีม…</div></div>`;
   document.querySelector('#rerollTeams').addEventListener('click', () => { teamRun++; loadTeams(); });
   await loadTeams();
 }
@@ -203,9 +215,91 @@ async function openProfile(playerId) {
   try {
     const data = await api(`/api/profile?id=${playerId}`);
     const player = data.player;
-    document.querySelector('#profileContent').innerHTML = `<p class="eyebrow">PLAYER PROFILE</p><div class="profile-heading"><span class="profile-avatar">${esc(player.name.slice(0,1))}</span><div><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span></div><b class="profile-score">${score(player.weighted_score)}<small>/ 10</small></b></div><p class="privacy-note">🔒 แสดงค่าเฉลี่ยรวม ไม่เปิดเผยรายชื่อผู้ประเมิน · ${player.assessor_count} ผู้ประเมิน</p><div class="profile-stats">${criteria.map(item => { const key = item.key === 'firstTouch' ? 'first_touch' : item.key === 'ballControl' ? 'ball_control' : item.key; return `<div><span>${item.label}</span><b>${score(player[key])}</b></div>`; }).join('')}</div>${data.myAssessment ? '<p class="your-rating-note">คุณได้ประเมินผู้เล่นคนนี้แล้ว</p>' : player.id === currentPlayer.id ? '<p class="your-rating-note">โปรไฟล์ของคุณจะแสดงค่าเฉลี่ยจากเพื่อน</p>' : '<p class="your-rating-note">คุณยังไม่ได้ประเมินผู้เล่นคนนี้</p>'}`;
+    const criteria = criteriaFor(player);
+    document.querySelector('#profileContent').innerHTML = `<p class="eyebrow">PLAYER PROFILE</p><div class="profile-heading"><span class="profile-avatar">${esc(player.name.slice(0,1))}</span><div><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span></div><b class="profile-score">${score(player.weighted_score)}<small>/ 10</small></b></div><p class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน · ${player.assessor_count} ผู้ประเมิน</p><div class="profile-stats">${criteria.map(item => `<div><span>${item.label}</span><b>${score(player[item.storage])}</b></div>`).join('')}</div>${data.myAssessment ? '<p class="your-rating-note">คุณได้ประเมินผู้เล่นคนนี้แล้ว</p>' : player.id === currentPlayer.id ? '<p class="your-rating-note">โปรไฟล์ของคุณจะแสดงค่าเฉลี่ยจากเพื่อน</p>' : '<p class="your-rating-note">คุณยังไม่ได้ประเมินผู้เล่นคนนี้</p>'}`;
     profileDialog.showModal();
   } catch (error) { toast(error.message, true); }
+}
+
+function adminNavTo(page) {
+  activeAdminPage = page;
+  document.querySelectorAll('.admin-tab').forEach(button => button.classList.toggle('active', button.dataset.adminPage === page));
+  if (page === 'teams') renderAdminTeams();
+  else renderAdminAssessments();
+}
+
+async function startAdmin(admin) {
+  currentAdmin = admin;
+  currentPlayer = null;
+  document.querySelector('#loginError').textContent = '';
+  document.querySelector('#adminLoginError').textContent = '';
+  loginView.classList.add('hidden');
+  appView.classList.add('hidden');
+  adminView.classList.remove('hidden');
+  await adminNavTo(activeAdminPage);
+}
+
+async function renderAdminAssessments() {
+  const node = document.querySelector('#adminContent');
+  node.innerHTML = '<div class="panel loading-card">กำลังโหลดคะแนน…</div>';
+  try {
+    const data = await api('/api/admin/assessments');
+    document.querySelector('#adminRoundLabel').textContent = data.round.title;
+    const assessments = data.assessments;
+    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">ASSESSMENT RECORDS</p><h1>คะแนนที่ส่งแล้ว</h1><p class="muted">เห็นชื่อผู้ให้คะแนน ผู้ถูกประเมิน และคะแนนรายด้าน</p></div><span class="admin-count">${assessments.length} รายการ</span></section><div class="panel admin-filter"><input id="assessmentSearch" placeholder="ค้นหาชื่อผู้ให้คะแนนหรือผู้ถูกประเมิน" autocomplete="off"></div><div id="adminAssessmentList" class="admin-assessment-list"></div>`;
+    const renderRows = query => {
+      const normalized = query.trim().toLowerCase();
+      const visible = assessments.filter(item => `${item.evaluator_name} ${item.player_name}`.toLowerCase().includes(normalized));
+      document.querySelector('#adminAssessmentList').innerHTML = visible.length ? visible.map(item => {
+        const criteria = criteriaFor({ positions: item.player_positions });
+        const values = criteria.map(criterion => `<span class="admin-score-chip"><small>${criterion.label}</small><b>${score(item[criterion.storage])}</b></span>`).join('');
+        return `<article class="panel admin-assessment-card"><div class="admin-assessment-heading"><div><span class="eyebrow">ผู้ให้คะแนน</span><b>${esc(item.evaluator_name)}</b></div><span class="admin-arrow">→</span><div><span class="eyebrow">ผู้ถูกประเมิน</span><b>${esc(item.player_name)}</b></div><time>${new Date(item.updated_at).toLocaleString('th-TH')}</time></div><div class="admin-score-list">${values}</div></article>`;
+      }).join('') : '<div class="panel empty-state">ไม่พบรายการคะแนน</div>';
+    };
+    renderRows('');
+    document.querySelector('#assessmentSearch').addEventListener('input', event => renderRows(event.target.value));
+  } catch (error) { node.innerHTML = `<div class="panel empty-state">${esc(error.message)}</div>`; }
+}
+
+let adminTeamAssignments = [];
+
+function renderAdminTeamBoard() {
+  const node = document.querySelector('#adminTeamBoard');
+  if (!node) return;
+  const drawColumn = (team, color, title) => `<section class="admin-team-column ${color}"><header><h2>${title}</h2><span>${adminTeamAssignments.filter(item => item.team === team).length} คน</span></header><div class="admin-team-list">${adminTeamAssignments.filter(item => item.team === team).map(player => `<article class="admin-team-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><button type="button" data-move-player="${player.id}" data-to-team="${team === 'A' ? 'B' : 'A'}" aria-label="ย้าย ${esc(player.name)} ไปอีกทีม">⇄</button></article>`).join('')}</div></section>`;
+  node.innerHTML = `${drawColumn('A', 'green-team', 'ทีม A')}${drawColumn('B', 'light-team', 'ทีม B')}`;
+  node.querySelectorAll('[data-move-player]').forEach(button => button.addEventListener('click', () => {
+    const playerId = Number(button.dataset.movePlayer);
+    const targetTeam = button.dataset.toTeam;
+    const player = adminTeamAssignments.find(item => item.id === playerId);
+    if (!player) return;
+    const targetCount = adminTeamAssignments.filter(item => item.team === targetTeam).length;
+    const sourceCount = adminTeamAssignments.filter(item => item.team === player.team).length;
+    if (Math.abs((sourceCount - 1) - (targetCount + 1)) > 2) return toast('จำนวนผู้เล่นสองทีมต้องต่างกันไม่เกิน 2 คนระหว่างการจัด', true);
+    player.team = targetTeam;
+    renderAdminTeamBoard();
+  }));
+}
+
+async function renderAdminTeams() {
+  const node = document.querySelector('#adminContent');
+  node.innerHTML = '<div class="panel loading-card">กำลังโหลดทีม…</div>';
+  try {
+    const data = await api('/api/admin/teams');
+    document.querySelector('#adminRoundLabel').textContent = data.round.title;
+    adminTeamAssignments = data.assignments;
+    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">TEAM BUILDER</p><h1>ปรับทีม</h1><p class="muted">ย้ายผู้เล่นระหว่างทีม แล้วบันทึกการจัดทีมนี้</p></div><button id="saveAdminTeams" class="button primary">บันทึกทีม</button></section><p class="admin-save-state">${data.customized ? 'กำลังแสดงทีมที่บันทึกไว้' : 'เริ่มจากทีมที่ระบบจัดให้สมดุล'}</p><div id="adminTeamBoard" class="admin-team-board"></div>`;
+    renderAdminTeamBoard();
+    document.querySelector('#saveAdminTeams').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        await api('/api/admin/teams', { method: 'PUT', body: JSON.stringify({ assignments: adminTeamAssignments.map(({ id, team }) => ({ id, team })) }) });
+        toast('บันทึกการจัดทีมแล้ว');
+        await renderAdminTeams();
+      } catch (error) { toast(error.message, true); button.disabled = false; }
+    });
+  } catch (error) { node.innerHTML = `<div class="panel empty-state">${esc(error.message)}</div>`; }
 }
 
 function bindNavigationButtons() {
@@ -225,6 +319,31 @@ document.querySelector('#loginForm').addEventListener('submit', async event => {
   } catch (error) { errorNode.textContent = error.message; }
   finally { submitButton.disabled = false; }
 });
+document.querySelector('#adminLoginToggle').addEventListener('click', () => {
+  document.querySelector('#loginForm').classList.add('hidden');
+  document.querySelector('#adminLoginToggle').classList.add('hidden');
+  document.querySelector('#adminLoginForm').classList.remove('hidden');
+  document.querySelector('#adminPassword').focus();
+});
+document.querySelector('#playerLoginToggle').addEventListener('click', () => {
+  document.querySelector('#adminLoginForm').classList.add('hidden');
+  document.querySelector('#loginForm').classList.remove('hidden');
+  document.querySelector('#adminLoginToggle').classList.remove('hidden');
+});
+document.querySelector('#adminLoginForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const errorNode = document.querySelector('#adminLoginError');
+  const button = event.currentTarget.querySelector('button[type="submit"]');
+  errorNode.textContent = '';
+  button.disabled = true;
+  try {
+    const result = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: document.querySelector('#adminPassword').value }) });
+    await startAdmin(result.admin);
+  } catch (error) { errorNode.textContent = error.message; }
+  finally { button.disabled = false; }
+});
+document.querySelectorAll('.admin-tab').forEach(button => button.addEventListener('click', () => adminNavTo(button.dataset.adminPage)));
+document.querySelector('#adminLogoutButton').addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); showLogin(); });
 document.querySelector('#logoutButton').addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); showLogin(); });
 document.querySelector('#closeProfile').addEventListener('click', () => profileDialog.close());
 profileDialog.addEventListener('click', event => { if (event.target === profileDialog) profileDialog.close(); });
@@ -233,8 +352,13 @@ async function boot() {
   try {
     const { players: roster } = await api('/api/roster');
     const select = document.querySelector('#loginName');
-    select.innerHTML += roster.map(player => `<option value="${esc(player.name)}">${esc(player.name)} · ${esc(player.positions)}</option>`).join('');
+    select.innerHTML += roster.map(player => `<option value="${esc(player.name)}">${esc(player.name)}</option>`).join('');
   } catch (error) { document.querySelector('#loginError').textContent = error.message; }
+  try {
+    const { admin } = await api('/api/admin/me');
+    await startAdmin(admin);
+    return;
+  } catch {}
   try {
     const { player } = await api('/api/me');
     await startApp(player);

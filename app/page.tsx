@@ -11,14 +11,35 @@ export default function HomePage() {
           <form id="loginForm" className="login-form">
             <label htmlFor="loginName">ชื่อเล่น</label>
             <select id="loginName" required><option value="">เลือกชื่อของคุณ</option></select>
-            <label htmlFor="loginPassword">รหัสผ่านร่วม</label>
-            <input id="loginPassword" type="password" inputMode="numeric" autoComplete="current-password" placeholder="รหัสผ่าน" required />
+            <label htmlFor="loginPassword">รหัสผ่าน</label>
+            <input id="loginPassword" type="password" autoComplete="current-password" placeholder="รหัสผ่าน" required />
             <p id="loginError" className="form-error" role="alert" />
             <button className="button primary full" type="submit">เข้าสู่ระบบ <span aria-hidden="true">→</span></button>
           </form>
-          <p className="login-footnote">ข้อมูลคะแนนจะแสดงแบบไม่ระบุตัวผู้ประเมิน</p>
+          <button id="adminLoginToggle" className="admin-login-link" type="button">เข้าสู่ระบบผู้ดูแล</button>
+          <form id="adminLoginForm" className="login-form hidden">
+            <label htmlFor="adminPassword">รหัสผู้ดูแล</label>
+            <input id="adminPassword" type="password" autoComplete="current-password" placeholder="รหัสผู้ดูแล" required />
+            <p id="adminLoginError" className="form-error" role="alert" />
+            <button className="button primary full" type="submit">เข้าสู่ระบบผู้ดูแล <span aria-hidden="true">→</span></button>
+            <button id="playerLoginToggle" className="admin-login-link" type="button">กลับไปเข้าสู่ระบบผู้เล่น</button>
+          </form>
         </section>
       </main>
+
+      <div id="adminView" className="admin-view hidden">
+        <header className="admin-topbar">
+          <div className="admin-brand"><div className="brand-mark small">CF</div><div><strong>แผงผู้ดูแล</strong><span id="adminRoundLabel">CLASS FOOTBALL</span></div></div>
+          <button id="adminLogoutButton" className="button secondary">ออกจากระบบ</button>
+        </header>
+        <main className="admin-main">
+          <nav className="admin-tabs" aria-label="เมนูผู้ดูแล">
+            <button data-admin-page="assessments" className="admin-tab active">คะแนนที่ส่งแล้ว</button>
+            <button data-admin-page="teams" className="admin-tab">ปรับทีม</button>
+          </nav>
+          <section id="adminContent" />
+        </main>
+      </div>
 
       <div id="appView" className="app-view hidden">
         <aside className="sidebar">
