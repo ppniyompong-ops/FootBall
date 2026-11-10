@@ -47,11 +47,8 @@ function showLogin() {
 
 async function startApp(player) {
   currentPlayer = player;
-  loginView.classList.add('hidden');
-  appView.classList.remove('hidden');
-  document.querySelector('#userName').textContent = player.name;
-  document.querySelector('#userPosition').textContent = player.positions;
-  document.querySelector('#userAvatar').textContent = player.name.slice(0, 1);
+  const loginError = document.querySelector('#loginError');
+  loginError.textContent = '';
   try {
     const [playerResult, ownResult, me] = await Promise.all([
       api('/api/players'), api('/api/assessments/mine'), api('/api/me')
@@ -59,8 +56,16 @@ async function startApp(player) {
     players = playerResult.players;
     assessments = new Map(ownResult.assessments.map(item => [item.player_id, item]));
     document.querySelector('#roundLabel').textContent = me.round.title;
+    document.querySelector('#userName').textContent = player.name;
+    document.querySelector('#userPosition').textContent = player.positions;
+    document.querySelector('#userAvatar').textContent = player.name.slice(0, 1);
+    loginView.classList.add('hidden');
+    appView.classList.remove('hidden');
     await renderPage(activePage);
-  } catch (error) { toast(error.message, true); }
+  } catch (error) {
+    showLogin();
+    loginError.textContent = error.message;
+  }
 }
 
 async function loadRanking() {
@@ -212,10 +217,13 @@ document.querySelector('#loginForm').addEventListener('submit', async event => {
   event.preventDefault();
   const errorNode = document.querySelector('#loginError');
   errorNode.textContent = '';
+  const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
   try {
     const result = await api('/api/login', { method: 'POST', body: JSON.stringify({ name: document.querySelector('#loginName').value, password: document.querySelector('#loginPassword').value }) });
     await startApp(result.player);
   } catch (error) { errorNode.textContent = error.message; }
+  finally { submitButton.disabled = false; }
 });
 document.querySelector('#logoutButton').addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }).catch(() => {}); showLogin(); });
 document.querySelector('#closeProfile').addEventListener('click', () => profileDialog.close());
