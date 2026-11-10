@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { PoolClient } from 'pg';
 import { currentAdmin } from '@/lib/auth';
 import { apiError, badRequest, unauthorized } from '@/lib/api';
 import { ensureDatabase, getActiveRound, pool } from '@/lib/db';
-import { balanceTeams, teamSeparationViolations, type TeamPlayer } from '@/lib/teams';
+import { balanceTeams, randomizeTeams, teamSeparationViolations, type TeamPlayer } from '@/lib/teams';
 
 export const runtime = 'nodejs';
 
@@ -18,6 +17,27 @@ async function getPlayers(roundId: number): Promise<TeamPlayer[]> {
     [roundId]
   );
   return rows.map(row => ({ ...row, id: Number(row.id), weighted_score: Number(row.weighted_score) }));
+}
+
+async function persistAssignments(roundId: number, assignments: Array<{ id: number; team: 'A' | 'B' }>) {
+  const client = await pool.connect();
+  let transactionStarted = false;
+  try {
+    await client.query('BEGIN');
+    transactionStarted = true;
+    await client.query('DELETE FROM team_assignments WHERE round_id = $1', [roundId]);
+    for (const item of assignments) {
+      await client.query(
+        'INSERT INTO team_assignments (round_id, player_id, team, updated_at) VALUES ($1, $2, $3, NOW())',
+        [roundId, item.id, item.team]
+      );
+    }
+    await client.query('COMMIT');
+    transactionStarted = false;
+  } catch (error) {
+    if (transactionStarted) await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally { client.release(); }
 }
 
 export async function GET() {
@@ -39,8 +59,6 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  let client: PoolClient | undefined;
-  let transactionStarted = false;
   try {
     const admin = await currentAdmin();
     if (!admin) return unauthorized();
@@ -67,21 +85,26 @@ export async function PUT(request: NextRequest) {
       return badRequest(`ต้องแยก ${separationConflicts.map(pair => pair.join(' กับ ')).join(' และ ')} ไว้คนละทีม`);
     }
 
-    client = await pool.connect();
-    await client.query('BEGIN');
-    transactionStarted = true;
-    await client.query('DELETE FROM team_assignments WHERE round_id = $1', [round.id]);
-    for (const item of assignments) {
-      await client.query(
-        'INSERT INTO team_assignments (round_id, player_id, team, updated_at) VALUES ($1, $2, $3, NOW())',
-        [round.id, item.id, item.team]
-      );
-    }
-    await client.query('COMMIT');
-    transactionStarted = false;
+    await persistAssignments(round.id, assignments as Array<{ id: number; team: 'A' | 'B' }>);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (client && transactionStarted) await client.query('ROLLBACK').catch(() => {});
     return apiError(error);
-  } finally { client?.release(); }
+  }
+}
+
+export async function POST() {
+  try {
+    const admin = await currentAdmin();
+    if (!admin) return unauthorized();
+    await ensureDatabase();
+    const round = await getActiveRound();
+    const players = await getPlayers(round.id);
+    const result = randomizeTeams(players);
+    const assignments = [
+      ...result.teamA.map(player => ({ id: player.id, team: 'A' as const })),
+      ...result.teamB.map(player => ({ id: player.id, team: 'B' as const }))
+    ];
+    await persistAssignments(round.id, assignments);
+    return NextResponse.json({ ok: true, difference: result.difference }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) { return apiError(error); }
 }

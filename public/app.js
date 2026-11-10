@@ -293,8 +293,17 @@ async function renderAdminTeams() {
     const data = await api('/api/admin/teams');
     document.querySelector('#adminRoundLabel').textContent = data.round.title;
     adminTeamAssignments = data.assignments;
-    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">TEAM BUILDER</p><h1>ปรับทีม</h1><p class="muted">ย้ายผู้เล่นระหว่างทีม แล้วบันทึกการจัดทีมนี้</p></div><button id="saveAdminTeams" class="button primary">บันทึกทีม</button></section><p class="admin-save-state">${data.customized ? 'กำลังแสดงทีมที่บันทึกไว้' : 'เริ่มจากทีมที่ระบบจัดให้สมดุล'}</p><div id="adminTeamBoard" class="admin-team-board"></div>`;
+    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">TEAM BUILDER</p><h1>ปรับทีม</h1><p class="muted">ย้ายผู้เล่นเองหรือสุ่มทีมใหม่ได้</p></div><div class="admin-team-actions"><button id="randomizeAdminTeams" class="button secondary">สุ่มทีมใหม่ ↻</button><button id="saveAdminTeams" class="button primary">บันทึกทีม</button></div></section><p class="admin-save-state">${data.customized ? 'กำลังแสดงทีมที่บันทึกไว้' : 'เริ่มจากทีมที่ระบบจัดให้สมดุล'}</p><div id="adminTeamBoard" class="admin-team-board"></div>`;
     renderAdminTeamBoard();
+    document.querySelector('#randomizeAdminTeams').addEventListener('click', async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        await api('/api/admin/teams', { method: 'POST' });
+        toast('สุ่มและบันทึกทีมใหม่แล้ว');
+        await renderAdminTeams();
+      } catch (error) { toast(error.message, true); button.disabled = false; }
+    });
     document.querySelector('#saveAdminTeams').addEventListener('click', async event => {
       const button = event.currentTarget;
       button.disabled = true;
