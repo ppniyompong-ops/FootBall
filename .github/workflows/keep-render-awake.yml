@@ -1,0 +1,17 @@
+name: Keep Render awake
+
+on:
+  schedule:
+    - cron: '5,15,25,35,45,55 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-slim
+    timeout-minutes: 2
+    steps:
+      - name: Ping the Render health check
+        run: curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 https://football-zvsb.onrender.com/health
