@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       return badRequest('คะแนนทุกด้านต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 10');
     }
     const columns = keys;
-    const placeholders = scores.map((_, index) => `$\{index + 4}`);
+    const placeholders = scores.map((_, index) => `$${index + 4}`);
     await pool.query(
       `INSERT INTO player_assessments
        (round_id, evaluator_id, player_id, ${columns.join(', ')}, updated_at)
