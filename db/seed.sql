@@ -1,7 +1,6 @@
 INSERT INTO players (name, positions) VALUES
   ('รอม', 'RB/CB'),
   ('พอร์ช', 'LW/ST'),
-  ('โช', 'ST/CDM'),
   ('อันดา', 'RB/CB'),
   ('แทน', 'CDM/CM'),
   ('เก้า', 'CAM/LW'),
