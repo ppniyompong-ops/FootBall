@@ -10,7 +10,7 @@ export default function HomePage() {
           <p className="muted">ใช้ชื่อเล่นของคุณเพื่อประเมินเพื่อนและจัดทีม</p>
           <form id="loginForm" className="login-form">
             <label htmlFor="loginName">ชื่อเล่น</label>
-            <select id="loginName" required><option value="">เลือกชื่อของคุณ</option></select>
+            <input id="loginName" type="text" autoComplete="username" placeholder="พิมพ์ชื่อเล่นของคุณ" required />
             <label htmlFor="loginPassword">รหัสผ่าน</label>
             <input id="loginPassword" type="password" autoComplete="current-password" placeholder="รหัสผ่าน" required />
             <p id="loginError" className="form-error" role="alert" />
