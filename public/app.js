@@ -1,9 +1,10 @@
 const playerCriteria = [
-  { key: 'fitness', storage: 'fitness', label: 'ความฟิต', en: 'FITNESS' },
+  { key: 'pace', storage: 'fitness', label: 'ความฟิต', en: 'FITNESS' },
   { key: 'passing', storage: 'passing', label: 'การจ่ายบอล', en: 'PASSING' },
-  { key: 'firstTouch', storage: 'first_touch', label: 'การรับบอล', en: 'FIRST TOUCH' },
+  { key: 'dribbling', storage: 'first_touch', label: 'การเลี้ยงบอล', en: 'FIRST TOUCH' },
   { key: 'shooting', storage: 'shooting', label: 'การยิงประตู', en: 'SHOOTING' },
-  { key: 'ballControl', storage: 'ball_control', label: 'การควบคุมบอล', en: 'BALL CONTROL' }
+  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'defending' }
+  { key: 'physicality', storage: 'Physicality', label: 'ความแข็งแกร่ง', en: 'PHYSICALITY' }
 ];
 const goalkeeperCriteria = [
   { key: 'distribution', storage: 'keeper_distribution', label: 'โยนบอลและเตะเปิดเกม', en: 'DISTRIBUTION' },
@@ -11,6 +12,7 @@ const goalkeeperCriteria = [
   { key: 'highBall', storage: 'keeper_high_ball', label: 'รับลูกสูงแบบสามเหลี่ยม', en: 'HIGH BALL' },
   { key: 'lowBall', storage: 'keeper_low_ball', label: 'รับลูกเลียด', en: 'LOW BALL' },
   { key: 'reflex', storage: 'keeper_reflex', label: 'ปฏิกิริยาเซฟลูกยิง', en: 'REFLEX SAVES' }
+  
 ];
 const isGoalkeeper = player => /(^|[/,\s])GK($|[/,\s])/i.test(String(player?.positions || ''));
 const criteriaFor = player => isGoalkeeper(player) ? goalkeeperCriteria : playerCriteria;
