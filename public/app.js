@@ -3,13 +3,13 @@ const playerCriteria = [
   { key: 'passing', storage: 'passing', label: 'การจ่ายบอล', en: 'PASSING' },
   { key: 'dribbling', storage: 'dribbling', label: 'การเลี้ยงบอล', en: 'DRIBBLING' },
   { key: 'shooting', storage: 'shooting', label: 'การยิงประตู', en: 'SHOOTING' },
-  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'DEFENDING' }
+  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'DEFENDING' },
   { key: 'physicality', storage: 'Physicality', label: 'ความแข็งแกร่ง', en: 'PHYSICALITY' }
 ];
 const goalkeeperCriteria = [
   { key: 'distribution', storage: 'keeper_distribution', label: 'โยนบอลและเตะเปิดเกม', en: 'DISTRIBUTION' },
   { key: 'cutting', storage: 'keeper_cutting', label: 'ออกมาตัดบอล', en: 'CLAIMING' },
-  { key: 'highBall', storage: 'keeper_high_ball', label: 'รับลูกสูงแบบสามเหลี่ยม', en: 'HIGH BALL' },
+  { key: 'highBall', storage: 'keeper_high_ball', label: 'รับลูกสูงแบบสามเหลี่ยม', en: 'HIGH BALL' },ล
   { key: 'lowBall', storage: 'keeper_low_ball', label: 'รับลูกเลียด', en: 'LOW BALL' },
   { key: 'reflex', storage: 'keeper_reflex', label: 'ปฏิกิริยาเซฟลูกยิง', en: 'REFLEX SAVES' }
   
