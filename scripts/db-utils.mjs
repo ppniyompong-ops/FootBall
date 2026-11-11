@@ -42,27 +42,29 @@ export async function initializeDatabase() {
 export async function refreshRanking(roundId) {
   await pool.query(
     `INSERT INTO player_rankings (
-       round_id, player_id, weighted_score, fitness, passing, first_touch,
-       shooting, ball_control, assessor_count, calculated_at
+       round_id, player_id, weighted_score, pace, passing, dribbling,
+       shooting, defending, physicality, assessor_count, calculated_at
      )
      SELECT $1, p.id,
-       ROUND((COALESCE(AVG(a.fitness), 0) + COALESCE(AVG(a.passing), 0) +
-         COALESCE(AVG(a.first_touch), 0) + 1.5 * COALESCE(AVG(a.shooting), 0) +
-         1.5 * COALESCE(AVG(a.ball_control), 0)) / 6.0, 2),
-       ROUND(COALESCE(AVG(a.fitness), 0), 2),
+       ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) +
+         COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) +
+         COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2),
+       ROUND(COALESCE(AVG(a.pace), 0), 2),
        ROUND(COALESCE(AVG(a.passing), 0), 2),
-       ROUND(COALESCE(AVG(a.first_touch), 0), 2),
+       ROUND(COALESCE(AVG(a.dribbling), 0), 2),
        ROUND(COALESCE(AVG(a.shooting), 0), 2),
-       ROUND(COALESCE(AVG(a.ball_control), 0), 2),
+       ROUND(COALESCE(AVG(a.defending), 0), 2),
+       ROUND(COALESCE(AVG(a.physicality), 0), 2),
        COUNT(a.id)::INTEGER, NOW()
      FROM players p
      LEFT JOIN player_assessments a ON a.player_id=p.id AND a.round_id=$1
      GROUP BY p.id
      ON CONFLICT (round_id, player_id) DO UPDATE SET
-       weighted_score=EXCLUDED.weighted_score, fitness=EXCLUDED.fitness,
-       passing=EXCLUDED.passing, first_touch=EXCLUDED.first_touch,
-       shooting=EXCLUDED.shooting, ball_control=EXCLUDED.ball_control,
-       assessor_count=EXCLUDED.assessor_count, calculated_at=NOW()`,
+       weighted_score=EXCLUDED.weighted_score, pace=EXCLUDED.pace,
+       passing=EXCLUDED.passing, dribbling=EXCLUDED.dribbling,
+       shooting=EXCLUDED.shooting, defending=EXCLUDED.defending,
+       physicality=EXCLUDED.physicality, assessor_count=EXCLUDED.assessor_count,
+       calculated_at=NOW()`,
     [roundId]
   );
 }
