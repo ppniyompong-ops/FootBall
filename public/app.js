@@ -1,9 +1,9 @@
 const playerCriteria = [
-  { key: 'pace', storage: 'fitness', label: 'ความฟิต', en: 'FITNESS' },
+  { key: 'pace', storage: 'pace', label: 'ความเร็ว', en: 'PACE' },
   { key: 'passing', storage: 'passing', label: 'การจ่ายบอล', en: 'PASSING' },
-  { key: 'dribbling', storage: 'first_touch', label: 'การเลี้ยงบอล', en: 'FIRST TOUCH' },
+  { key: 'dribbling', storage: 'dribbling', label: 'การเลี้ยงบอล', en: 'DRIBBLING' },
   { key: 'shooting', storage: 'shooting', label: 'การยิงประตู', en: 'SHOOTING' },
-  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'defending' }
+  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'DEFENDING' }
   { key: 'physicality', storage: 'Physicality', label: 'ความแข็งแกร่ง', en: 'PHYSICALITY' }
 ];
 const goalkeeperCriteria = [
