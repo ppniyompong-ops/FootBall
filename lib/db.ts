@@ -68,30 +68,19 @@ export async function getActiveRound() {
 export async function refreshRanking(roundId: number) {
   await pool.query(
     `INSERT INTO player_rankings (
-       round_id, player_id, weighted_score, fitness, passing, first_touch,
-       shooting, ball_control, keeper_distribution, keeper_cutting,
-       keeper_high_ball, keeper_low_ball, keeper_reflex, assessor_count, calculated_at
+       round_id, player_id, weighted_score, pace, passing, dribbling,
+       shooting, defending, physicality, assessor_count, calculated_at
      )
      SELECT $1, p.id,
-       ROUND(CASE WHEN p.positions ILIKE '%GK%' THEN
-         (COALESCE(AVG(a.keeper_distribution), 0) + COALESCE(AVG(a.keeper_cutting), 0) +
-          COALESCE(AVG(a.keeper_high_ball), 0) + COALESCE(AVG(a.keeper_low_ball), 0) +
-          COALESCE(AVG(a.keeper_reflex), 0)) / 5.0
-       ELSE
-         (COALESCE(AVG(a.fitness), 0) + COALESCE(AVG(a.passing), 0) +
-          COALESCE(AVG(a.first_touch), 0) + 1.5 * COALESCE(AVG(a.shooting), 0) +
-          1.5 * COALESCE(AVG(a.ball_control), 0)) / 6.0
-       END, 2),
-       ROUND(COALESCE(AVG(a.fitness), 0), 2),
+       ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) +
+         COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) +
+         COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2),
+       ROUND(COALESCE(AVG(a.pace), 0), 2),
        ROUND(COALESCE(AVG(a.passing), 0), 2),
-       ROUND(COALESCE(AVG(a.first_touch), 0), 2),
+       ROUND(COALESCE(AVG(a.dribbling), 0), 2),
        ROUND(COALESCE(AVG(a.shooting), 0), 2),
-       ROUND(COALESCE(AVG(a.ball_control), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_distribution), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_cutting), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_high_ball), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_low_ball), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_reflex), 0), 2),
+       ROUND(COALESCE(AVG(a.defending), 0), 2),
+       ROUND(COALESCE(AVG(a.physicality), 0), 2),
        COUNT(a.id)::INTEGER,
        NOW()
      FROM players p
@@ -100,16 +89,12 @@ export async function refreshRanking(roundId: number) {
      GROUP BY p.id
      ON CONFLICT (round_id, player_id) DO UPDATE SET
        weighted_score = EXCLUDED.weighted_score,
-       fitness = EXCLUDED.fitness,
+       pace = EXCLUDED.pace,
        passing = EXCLUDED.passing,
-       first_touch = EXCLUDED.first_touch,
+       dribbling = EXCLUDED.dribbling,
        shooting = EXCLUDED.shooting,
-       ball_control = EXCLUDED.ball_control,
-       keeper_distribution = EXCLUDED.keeper_distribution,
-       keeper_cutting = EXCLUDED.keeper_cutting,
-       keeper_high_ball = EXCLUDED.keeper_high_ball,
-       keeper_low_ball = EXCLUDED.keeper_low_ball,
-       keeper_reflex = EXCLUDED.keeper_reflex,
+       defending = EXCLUDED.defending,
+       physicality = EXCLUDED.physicality,
        assessor_count = EXCLUDED.assessor_count,
        calculated_at = NOW()`,
     [roundId]
