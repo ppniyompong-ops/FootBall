@@ -1,19 +1,12 @@
 const playerCriteria = [
-  { key: 'fitness', storage: 'fitness', label: 'ความฟิต', en: 'FITNESS' },
+  { key: 'pace', storage: 'pace', label: 'ความเร็ว', en: 'PACE' },
   { key: 'passing', storage: 'passing', label: 'การจ่ายบอล', en: 'PASSING' },
-  { key: 'firstTouch', storage: 'first_touch', label: 'การรับบอล', en: 'FIRST TOUCH' },
+  { key: 'dribbling', storage: 'dribbling', label: 'การเลี้ยงบอล', en: 'DRIBBLING' },
   { key: 'shooting', storage: 'shooting', label: 'การยิงประตู', en: 'SHOOTING' },
-  { key: 'ballControl', storage: 'ball_control', label: 'การควบคุมบอล', en: 'BALL CONTROL' }
+  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'DEFENDING' },
+  { key: 'physicality', storage: 'physicality', label: 'ความแข็งแกร่ง', en: 'PHYSICALITY' }
 ];
-const goalkeeperCriteria = [
-  { key: 'distribution', storage: 'keeper_distribution', label: 'โยนบอลและเตะเปิดเกม', en: 'DISTRIBUTION' },
-  { key: 'cutting', storage: 'keeper_cutting', label: 'ออกมาตัดบอล', en: 'CLAIMING' },
-  { key: 'highBall', storage: 'keeper_high_ball', label: 'รับลูกสูงแบบสามเหลี่ยม', en: 'HIGH BALL' },
-  { key: 'lowBall', storage: 'keeper_low_ball', label: 'รับลูกเลียด', en: 'LOW BALL' },
-  { key: 'reflex', storage: 'keeper_reflex', label: 'ปฏิกิริยาเซฟลูกยิง', en: 'REFLEX SAVES' }
-];
-const isGoalkeeper = player => /(^|[/,\s])GK($|[/,\s])/i.test(String(player?.positions || ''));
-const criteriaFor = player => isGoalkeeper(player) ? goalkeeperCriteria : playerCriteria;
+const criteriaFor = () => playerCriteria;
 const teamSeparationPairs = [['เช่', 'พอร์ช'], ['ปกป้อง', 'กังฟู']];
 const loginView = document.querySelector('#loginView');
 const appView = document.querySelector('#appView');
