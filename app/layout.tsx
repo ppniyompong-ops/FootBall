@@ -22,7 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="th">
       <body className="min-h-screen">
         {children}
-        <Script src="/app.js" strategy="afterInteractive" />
+        <Script src="/app.js?v=fc-six-stats-2" strategy="afterInteractive" />
       </body>
     </html>
   );
