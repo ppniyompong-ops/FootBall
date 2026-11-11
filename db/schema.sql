@@ -43,6 +43,12 @@ CREATE TABLE IF NOT EXISTS player_assessments (
   round_id INTEGER NOT NULL REFERENCES assessment_rounds(id) ON DELETE CASCADE,
   evaluator_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
   player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+  pace SMALLINT CHECK (pace BETWEEN 1 AND 10),
+  passing SMALLINT CHECK (passing BETWEEN 1 AND 10),
+  dribbling SMALLINT CHECK (dribbling BETWEEN 1 AND 10),
+  shooting SMALLINT CHECK (shooting BETWEEN 1 AND 10),
+  defending SMALLINT CHECK (defending BETWEEN 1 AND 10),
+  physicality SMALLINT CHECK (physicality BETWEEN 1 AND 10),
   fitness SMALLINT CHECK (fitness BETWEEN 1 AND 10),
   passing SMALLINT CHECK (passing BETWEEN 1 AND 10),
   first_touch SMALLINT CHECK (first_touch BETWEEN 1 AND 10),
@@ -62,6 +68,12 @@ CREATE TABLE IF NOT EXISTS player_rankings (
   round_id INTEGER NOT NULL REFERENCES assessment_rounds(id) ON DELETE CASCADE,
   player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
   weighted_score NUMERIC(5,2) NOT NULL DEFAULT 0,
+  pace NUMERIC(5,2) NOT NULL DEFAULT 0,
+  passing NUMERIC(5,2) NOT NULL DEFAULT 0,
+  dribbling NUMERIC(5,2) NOT NULL DEFAULT 0,
+  shooting NUMERIC(5,2) NOT NULL DEFAULT 0,
+  defending NUMERIC(5,2) NOT NULL DEFAULT 0,
+  physicality NUMERIC(5,2) NOT NULL DEFAULT 0,
   fitness NUMERIC(5,2) NOT NULL DEFAULT 0,
   passing NUMERIC(5,2) NOT NULL DEFAULT 0,
   first_touch NUMERIC(5,2) NOT NULL DEFAULT 0,
@@ -86,6 +98,10 @@ CREATE TABLE IF NOT EXISTS team_assignments (
 );
 
 ALTER TABLE player_assessments
+  ADD COLUMN IF NOT EXISTS pace SMALLINT CHECK (pace BETWEEN 1 AND 10),
+  ADD COLUMN IF NOT EXISTS dribbling SMALLINT CHECK (dribbling BETWEEN 1 AND 10),
+  ADD COLUMN IF NOT EXISTS defending SMALLINT CHECK (defending BETWEEN 1 AND 10),
+  ADD COLUMN IF NOT EXISTS physicality SMALLINT CHECK (physicality BETWEEN 1 AND 10),
   ALTER COLUMN fitness DROP NOT NULL,
   ALTER COLUMN passing DROP NOT NULL,
   ALTER COLUMN first_touch DROP NOT NULL,
@@ -98,11 +114,34 @@ ALTER TABLE player_assessments
   ADD COLUMN IF NOT EXISTS keeper_reflex SMALLINT CHECK (keeper_reflex BETWEEN 1 AND 10);
 
 ALTER TABLE player_rankings
+  ADD COLUMN IF NOT EXISTS pace NUMERIC(5,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS dribbling NUMERIC(5,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS defending NUMERIC(5,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS physicality NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_distribution NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_cutting NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_high_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_low_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_reflex NUMERIC(5,2) NOT NULL DEFAULT 0;
+
+-- Apply the FC six-attribute reset exactly once. This removes every old
+-- assessment and cached ranking, drops saved team assignments, and removes โช.
+CREATE TABLE IF NOT EXISTS app_migrations (
+  version TEXT PRIMARY KEY,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+DO $fc_six_stats_reset$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM app_migrations WHERE version = 'fc-six-stats-reset-v1') THEN
+    DELETE FROM player_assessments;
+    DELETE FROM player_rankings;
+    DELETE FROM team_assignments;
+    DELETE FROM players WHERE name = 'โช';
+    INSERT INTO app_migrations (version) VALUES ('fc-six-stats-reset-v1');
+  END IF;
+END
+$fc_six_stats_reset$;
 
 -- Merge the duplicate roster entry into the canonical player while retaining
 -- the newest non-duplicate assessment and any manual team assignment.
