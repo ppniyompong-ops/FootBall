@@ -367,20 +367,16 @@ document.querySelector('#closeProfile').addEventListener('click', () => profileD
 profileDialog.addEventListener('click', event => { if (event.target === profileDialog) profileDialog.close(); });
 
 async function boot() {
+  // ไม่กู้คืน session อัตโนมัติ: ทุกครั้งที่เปิดหรือรีเฟรชเว็บให้เริ่มที่หน้า Login
+  // ล้าง cookie เก่าที่อาจยังค้างจากการเข้าสู่ระบบครั้งก่อนด้วย
+  await fetch('/api/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
+  showLogin();
+
   try {
     const { players: roster } = await api('/api/roster');
     const select = document.querySelector('#loginName');
     select.innerHTML += roster.map(player => `<option value="${esc(player.name)}">${esc(player.name)}</option>`).join('');
   } catch (error) { document.querySelector('#loginError').textContent = error.message; }
-  try {
-    const { admin } = await api('/api/admin/me');
-    await startAdmin(admin);
-    return;
-  } catch {}
-  try {
-    const { player } = await api('/api/me');
-    await startApp(player);
-  } catch { showLogin(); }
 }
 
 boot();
