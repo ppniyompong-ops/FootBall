@@ -1,10 +1,9 @@
 const playerCriteria = [
-  { key: 'pace', storage: 'pace', label: 'ความเร็ว', en: 'PACE' },
+  { key: 'fitness', storage: 'fitness', label: 'ความฟิต', en: 'FITNESS' },
   { key: 'passing', storage: 'passing', label: 'การจ่ายบอล', en: 'PASSING' },
-  { key: 'dribbling', storage: 'dribbling', label: 'การเลี้ยงบอล', en: 'DRIBBLING' },
+  { key: 'firstTouch', storage: 'first_touch', label: 'การรับบอล', en: 'FIRST TOUCH' },
   { key: 'shooting', storage: 'shooting', label: 'การยิงประตู', en: 'SHOOTING' },
-  { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'DEFENDING' },
-  { key: 'physicality', storage: 'Physicality', label: 'ความแข็งแกร่ง', en: 'PHYSICALITY' }
+  { key: 'ballControl', storage: 'ball_control', label: 'การควบคุมบอล', en: 'BALL CONTROL' }
 ];
 const goalkeeperCriteria = [
   { key: 'distribution', storage: 'keeper_distribution', label: 'โยนบอลและเตะเปิดเกม', en: 'DISTRIBUTION' },
@@ -12,7 +11,6 @@ const goalkeeperCriteria = [
   { key: 'highBall', storage: 'keeper_high_ball', label: 'รับลูกสูงแบบสามเหลี่ยม', en: 'HIGH BALL' },
   { key: 'lowBall', storage: 'keeper_low_ball', label: 'รับลูกเลียด', en: 'LOW BALL' },
   { key: 'reflex', storage: 'keeper_reflex', label: 'ปฏิกิริยาเซฟลูกยิง', en: 'REFLEX SAVES' }
-  
 ];
 const isGoalkeeper = player => /(^|[/,\s])GK($|[/,\s])/i.test(String(player?.positions || ''));
 const criteriaFor = player => isGoalkeeper(player) ? goalkeeperCriteria : playerCriteria;
@@ -111,23 +109,23 @@ async function renderPage(page) {
 async function renderDashboard() {
   content.innerHTML = `
     <section class="welcome-row">
-      <div><p class="eyebrow">สนามของคุณ</p><h1>สวัสดี ${esc(currentPlayer.name)} <span class="wave">✦</span></h1><p class="muted">ช่วยกันประ[...]
+      <div><p class="eyebrow">สนามของคุณ</p><h1>สวัสดี ${esc(currentPlayer.name)} <span class="wave">✦</span></h1><p class="muted">ช่วยกันประเมินให้ครบ แล้วมาดูทีมที่สมดุลที่สุด</p></div>
       <button class="button primary" data-go="assessment">เริ่มประเมิน <span>→</span></button>
     </section>
     <section class="stat-grid" id="statGrid"><div class="stat-card loading-card">กำลังโหลดข้อมูล…</div></section>
     <section class="dashboard-grid">
-      <article class="panel progress-panel"><div class="panel-head"><div><p class="eyebrow">YOUR CHECKLIST</p><h2>ความคืบหน้าการประเมิน</h2></div><span class=[...]
+      <article class="panel progress-panel"><div class="panel-head"><div><p class="eyebrow">YOUR CHECKLIST</p><h2>ความคืบหน้าการประเมิน</h2></div><span class="panel-icon">◎</span></div><div id="progressContent" class="progress-content">กำลังโหลด…</div></article>
     </section>
-    <section class="panel compact-ranking"><div class="panel-head"><div><p class="eyebrow">LEADERBOARD</p><h2>อันดับล่าสุด</h2></div><button class="text-button" data-go="rankin[...]
+    <section class="panel compact-ranking"><div class="panel-head"><div><p class="eyebrow">LEADERBOARD</p><h2>อันดับล่าสุด</h2></div><button class="text-button" data-go="ranking">ดูทั้งหมด →</button></div><div id="dashboardRanking" class="table-wrap">กำลังโหลด…</div></section>`;
   bindNavigationButtons();
   try {
     const [summary, ranking] = await Promise.all([api('/api/summary'), loadRanking()]);
     document.querySelector('#statGrid').innerHTML = `
-      <article class="stat-card"><span class="stat-label">อันดับของคุณ</span><strong>${summary.myRank ? `#${summary.myRank}` : '—'}</strong><small>จากผู้เล่[...]
-      <article class="stat-card accent-card"><span class="stat-label">ประเมินแล้ว</span><strong>${summary.completed}<i>/${summary.total}</i></strong><small>เพื่อนท�[...]
-      <article class="stat-card"><span class="stat-label">รอบประเมิน</span><strong class="round-stat">${esc(summary.round.title)}</strong><small>คะแนนแก้ไขไ��[...]
+      <article class="stat-card"><span class="stat-label">อันดับของคุณ</span><strong>${summary.myRank ? `#${summary.myRank}` : '—'}</strong><small>จากผู้เล่น ${ranking.length} คน</small></article>
+      <article class="stat-card accent-card"><span class="stat-label">ประเมินแล้ว</span><strong>${summary.completed}<i>/${summary.total}</i></strong><small>เพื่อนที่คุณให้คะแนน</small></article>
+      <article class="stat-card"><span class="stat-label">รอบประเมิน</span><strong class="round-stat">${esc(summary.round.title)}</strong><small>คะแนนแก้ไขได้ตลอดรอบ</small></article>`;
     const percent = Math.round(summary.completed / summary.total * 100);
-    document.querySelector('#progressContent').innerHTML = `<div class="progress-line"><div class="progress-track"><span style="width:${percent}%"></span></div><b>${percent}%</b></div><p class="muted"[...]
+    document.querySelector('#progressContent').innerHTML = `<div class="progress-line"><div class="progress-track"><span style="width:${percent}%"></span></div><b>${percent}%</b></div><p class="muted">ส่งแล้ว ${summary.completed} จาก ${summary.total} คน</p><div class="mini-player-list">${players.slice(0, 6).map(player => `<button class="mini-player ${assessments.has(player.id) ? 'done' : ''}" data-assess="${player.id}"><span>${esc(player.name)}</span><span class="assessment-state ${assessments.has(player.id) ? 'complete' : 'incomplete'}">${assessments.has(player.id) ? 'ประเมินแล้ว' : 'ยังไม่ประเมิน'}</span></button>`).join('')}<button class="mini-player more-player" data-go="assessment">ประเมินเพื่อนคนอื่น <b>→</b></button></div>`;
     document.querySelector('#dashboardRanking').innerHTML = rankingTable(ranking.slice(0, 5), false);
     document.querySelectorAll('[data-assess]').forEach(button => button.addEventListener('click', () => openAssessment(Number(button.dataset.assess))));
     document.querySelectorAll('[data-player]').forEach(button => button.addEventListener('click', () => openProfile(Number(button.dataset.player))));
@@ -137,11 +135,11 @@ async function renderDashboard() {
 
 function rankingTable(rows, showCount = true) {
   if (!rows.length) return '<div class="empty-state">ยังไม่มีข้อมูลอันดับ</div>';
-  return `<table><thead><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ตำแหน่ง</th><th>คะแนน</th>${showCount ? '<th>ผู้ประเมิน</th>' : ''}[...]
+  return `<table><thead><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ตำแหน่ง</th><th>คะแนน</th>${showCount ? '<th>ผู้ประเมิน</th>' : ''}</tr></thead><tbody>${rows.map(player => `<tr class="clickable-row" data-player="${player.id}"><td><span class="rank-badge ${player.rank <= 3 ? `top-${player.rank}` : ''}">${String(player.rank).padStart(2, '0')}</span></td><td><span class="table-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="table-player-name"><b>${esc(player.name)}</b>${player.award ? `<small class="fun-award ${player.award === 'Super Ballon d\'Or' ? 'super-award' : ''}">${esc(player.award)}</small>` : ''}</span>${player.id === currentPlayer.id ? '<em>YOU</em>' : ''}</span></td><td><span class="position-tag">${esc(player.positions)}</span></td><td><b class="score-cell">${score(player.weighted_score)}</b></td>${showCount ? `<td class="muted">${player.assessor_count}</td>` : ''}</tr>`).join('')}</tbody></table>`;
 }
 
 async function renderRanking() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">LEADERBOARD</p><h1>อันดับผู้เล่น</h1><p class="muted">คะแนนจากแบบประ�[...]
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">LEADERBOARD</p><h1>อันดับผู้เล่น</h1><p class="muted">คะแนนจากแบบประเมินที่ส่งแล้ว</p></div><div class="round-pill"><span class="live-dot"></span><span id="rankingRound">กำลังโหลด</span></div></section><section class="panel ranking-panel"><div class="ranking-summary"><div><span class="eyebrow">CLASS RANKING</span><b id="rankingPlayerCount">— <small>PLAYERS</small></b></div><span class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน</span></div><div id="rankingTable" class="table-wrap">กำลังโหลด…</div></section>`;
   try {
     const data = await api('/api/ranking');
     document.querySelector('#rankingRound').textContent = data.round.title;
@@ -153,11 +151,11 @@ async function renderRanking() {
 
 function assessmentCard(player) {
   const saved = assessments.get(player.id);
-  return `<button class="assessment-player ${saved ? 'assessed' : ''}" data-assess="${player.id}"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="assessment-player-info>[...]
+  return `<button class="assessment-player ${saved ? 'assessed' : ''}" data-assess="${player.id}"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="assessment-player-info"><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><span class="assessment-status ${saved ? 'complete' : 'incomplete'}">${saved ? 'ประเมินแล้ว' : 'ยังไม่ประเมิน'}</span><b class="assessment-arrow">→</b></button>`;
 }
 
 async function renderAssessment() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">PLAYER ASSESSMENT</p><h1>ประเมินเพื่อน</h1><p class="muted">ให้คะแนน 1–10 ใ��[...]
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">PLAYER ASSESSMENT</p><h1>ประเมินเพื่อน</h1><p class="muted">ให้คะแนน 1–10 ในแต่ละด้าน</p></div><span class="assessment-counter">${assessments.size}/${players.length} <small>คน</small></span></section><div class="assessment-layout"><section class="panel player-select-panel"><div class="panel-head"><div><p class="eyebrow">CLASSMATES</p><h2>เลือกผู้เล่น</h2></div></div><div class="search-wrap"><span>⌕</span><input id="playerSearch" placeholder="ค้นหาชื่อเล่น" autocomplete="off"></div><div id="assessmentList" class="assessment-list"></div></section><section class="panel assessment-form-panel" id="assessmentFormPanel"><div class="empty-form"><div class="empty-ball">◎</div><h2>เลือกเพื่อนเพื่อเริ่มประเมิน</h2><p class="muted">คุณประเมินตัวเองไม่ได้ และแก้ไขคะแนนเดิมได้เสมอ</p></div></section></div>`;
   renderAssessmentList(players);
   document.querySelector('#playerSearch').addEventListener('input', event => renderAssessmentList(players.filter(player => player.name.includes(event.target.value.trim()) || player.positions.toLowerCase().includes(event.target.value.trim().toLowerCase()))));
 }
@@ -177,7 +175,7 @@ function openAssessment(playerId) {
   if (!panel) { navTo('assessment'); setTimeout(() => openAssessment(playerId), 0); return; }
   document.querySelectorAll('.assessment-player').forEach(button => button.classList.toggle('selected', Number(button.dataset.assess) === playerId));
   const criteria = criteriaFor(player);
-  panel.innerHTML = `<div class="assessment-form-head"><div><p class="eyebrow">${saved ? 'EDIT ASSESSMENT' : 'NEW ASSESSMENT'}</p><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.po[...]
+  panel.innerHTML = `<div class="assessment-form-head"><div><p class="eyebrow">${saved ? 'EDIT ASSESSMENT' : 'NEW ASSESSMENT'}</p><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span></div><span class="form-avatar">${esc(player.name.slice(0,1))}</span></div><p class="muted form-intro">ให้คะแนนความสามารถของผู้เล่นคนนี้ตามที่คุณเห็น</p><form id="assessmentForm"><div class="score-inputs">${criteria.map(item => `<label class="score-input-row"><span><b>${item.label}</b><small>${item.en}</small></span><select name="${item.key}" aria-label="${item.label}" required>${Array.from({length:10}, (_, index) => index+1).map(value => `<option value="${value}" ${Number(saved?.[item.storage] || 7) === value ? 'selected' : ''}>${value}</option>`).join('')}</select></label>`).join('')}</div><div class="form-actions"><button class="button primary full" type="submit">${saved ? 'บันทึกการแก้ไข' : 'ส่งคะแนน'} <span>→</span></button></div><p class="anonymous-hint">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน</p></form>`;
   const form = panel.querySelector('#assessmentForm');
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -196,7 +194,7 @@ function openAssessment(playerId) {
 }
 
 async function renderTeams() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">BALANCED TEAMS</p><h1>ทีมของห้อง</h1><p class="muted">ดูทีมที่แอดมินจั�[...]
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">BALANCED TEAMS</p><h1>ทีมของห้อง</h1><p class="muted">ดูทีมที่แอดมินจัดไว้</p></div></section><div id="teamResult" class="team-result"><div class="panel loading-card">กำลังโหลดทีม…</div></div>`;
   await loadTeams();
 }
 
@@ -206,9 +204,9 @@ async function loadTeams() {
   node.innerHTML = '<div class="panel loading-card">กำลังโหลดทีม…</div>';
   try {
     const data = await api('/api/teams');
-    const drawTeam = (team, name, color, total) => `<article class="team-card ${color}"><header><div><span class="eyebrow">${name === 'ทีม A' ? 'GREEN SQUAD' : 'WHITE SQUAD'}</span><h2>${name}</[...]
+    const drawTeam = (team, name, color, total) => `<article class="team-card ${color}"><header><div><span class="eyebrow">${name === 'ทีม A' ? 'GREEN SQUAD' : 'WHITE SQUAD'}</span><h2>${name}</h2></div><div class="team-score"><b>${score(total)}</b><small>คะแนนรวม</small></div></header><div class="team-player-list">${team.map((player,index) => `<div class="team-player"><span class="team-number">${String(index+1).padStart(2,'0')}</span><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="team-player-info"><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><b class="team-player-score">${score(player.weighted_score)}</b></div>`).join('')}</div><footer>${team.length} ผู้เล่น <span>ตำแหน่งไม่จำกัด</span></footer></article>`;
     const difference = Math.abs(data.sumA - data.sumB);
-    node.innerHTML = `${drawTeam(data.teamA,'ทีม A','green-team',data.sumA)}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>ส่วนต่าง</s[...]
+    node.innerHTML = `${drawTeam(data.teamA,'ทีม A','green-team',data.sumA)}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>ส่วนต่าง</small><b>${score(difference)}</b></div></div>${drawTeam(data.teamB,'ทีม B','light-team',data.sumB)}`;
   } catch (error) { node.innerHTML = `<div class="panel empty-state">${esc(error.message)}</div>`; }
 }
 
@@ -217,7 +215,7 @@ async function openProfile(playerId) {
     const data = await api(`/api/profile?id=${playerId}`);
     const player = data.player;
     const criteria = criteriaFor(player);
-    document.querySelector('#profileContent').innerHTML = `<p class="eyebrow">PLAYER PROFILE</p><div class="profile-heading"><span class="profile-avatar">${esc(player.name.slice(0,1))}</span><div><h2>[...]
+    document.querySelector('#profileContent').innerHTML = `<p class="eyebrow">PLAYER PROFILE</p><div class="profile-heading"><span class="profile-avatar">${esc(player.name.slice(0,1))}</span><div><h2>${esc(player.name)}</h2><span class="position-tag">${esc(player.positions)}</span>${player.award ? `<small class="fun-award profile-award ${player.award === 'Super Ballon d\'Or' ? 'super-award' : ''}">${esc(player.award)}</small>` : ''}</div><b class="profile-score">${score(player.weighted_score)}<small>/ 10</small></b></div><p class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน · ${player.assessor_count} ผู้ประเมิน</p><div class="profile-stats">${criteria.map(item => `<div><span>${item.label}</span><b>${score(player[item.storage])}</b></div>`).join('')}</div>${data.myAssessment ? '<p class="your-rating-note">คุณได้ประเมินผู้เล่นคนนี้แล้ว</p>' : player.id === currentPlayer.id ? '<p class="your-rating-note">โปรไฟล์ของคุณจะแสดงค่าเฉลี่ยจากเพื่อน</p>' : '<p class="your-rating-note">คุณยังไม่ได้ประเมินผู้เล่นคนนี้</p>'}`;
     profileDialog.showModal();
   } catch (error) { toast(error.message, true); }
 }
@@ -247,14 +245,14 @@ async function renderAdminAssessments() {
     const data = await api('/api/admin/assessments');
     document.querySelector('#adminRoundLabel').textContent = data.round.title;
     const assessments = data.assessments;
-    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">ASSESSMENT RECORDS</p><h1>คะแนนที่ส่งแล้ว</h1><p class="muted">เห็นชื่อ�[...]
+    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">ASSESSMENT RECORDS</p><h1>คะแนนที่ส่งแล้ว</h1><p class="muted">เห็นชื่อผู้ให้คะแนน ผู้ถูกประเมิน และคะแนนรายด้าน</p></div><span class="admin-count">${assessments.length} รายการ</span></section><div class="panel admin-filter"><input id="assessmentSearch" placeholder="ค้นหาชื่อผู้ให้คะแนนหรือผู้ถูกประเมิน" autocomplete="off"></div><div id="adminAssessmentList" class="admin-assessment-list"></div>`;
     const renderRows = query => {
       const normalized = query.trim().toLowerCase();
       const visible = assessments.filter(item => `${item.evaluator_name} ${item.player_name}`.toLowerCase().includes(normalized));
       document.querySelector('#adminAssessmentList').innerHTML = visible.length ? visible.map(item => {
         const criteria = criteriaFor({ positions: item.player_positions });
         const values = criteria.map(criterion => `<span class="admin-score-chip"><small>${criterion.label}</small><b>${score(item[criterion.storage])}</b></span>`).join('');
-        return `<article class="panel admin-assessment-card"><div class="admin-assessment-heading"><div><span class="eyebrow">ผู้ให้คะแนน</span><b>${esc(item.evaluator_name)}</b>[...]
+        return `<article class="panel admin-assessment-card"><div class="admin-assessment-heading"><div><span class="eyebrow">ผู้ให้คะแนน</span><b>${esc(item.evaluator_name)}</b></div><span class="admin-arrow">→</span><div><span class="eyebrow">ผู้ถูกประเมิน</span><b>${esc(item.player_name)}</b></div><time>${new Date(item.updated_at).toLocaleString('th-TH')}</time></div><div class="admin-score-list">${values}</div></article>`;
       }).join('') : '<div class="panel empty-state">ไม่พบรายการคะแนน</div>';
     };
     renderRows('');
@@ -271,8 +269,8 @@ function renderAdminTeamBoard() {
   const teamB = adminTeamAssignments.filter(item => item.team === 'B');
   const sumA = teamA.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0);
   const sumB = teamB.reduce((sum, player) => sum + Number(player.weighted_score || 0), 0);
-  const drawColumn = (team, color, title, total) => `<section class="admin-team-column ${color}"><header><h2>${title}</h2><div class="admin-team-total"><strong>${score(total)}</strong><span>${adminTea[...]
-  node.innerHTML = `${drawColumn('A', 'green-team', 'ทีม A', sumA)}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>คะแนนต่างกัน[...]
+  const drawColumn = (team, color, title, total) => `<section class="admin-team-column ${color}"><header><h2>${title}</h2><div class="admin-team-total"><strong>${score(total)}</strong><span>${adminTeamAssignments.filter(item => item.team === team).length} คน</span></div></header><div class="admin-team-list">${adminTeamAssignments.filter(item => item.team === team).map(player => `<article class="admin-team-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span><b>${esc(player.name)}</b><small>${esc(player.positions)}</small></span><b class="admin-team-player-score">${score(player.weighted_score)}</b><button type="button" data-move-player="${player.id}" data-to-team="${team === 'A' ? 'B' : 'A'}" aria-label="ย้าย ${esc(player.name)} ไปอีกทีม">⇄</button></article>`).join('')}</div></section>`;
+  node.innerHTML = `${drawColumn('A', 'green-team', 'ทีม A', sumA)}<div class="versus-column"><span class="versus">VS</span><div class="balance-meter"><small>คะแนนต่างกัน</small><b>${score(Math.abs(sumA - sumB))}</b></div></div>${drawColumn('B', 'light-team', 'ทีม B', sumB)}`;
   node.querySelectorAll('[data-move-player]').forEach(button => button.addEventListener('click', () => {
     const playerId = Number(button.dataset.movePlayer);
     const targetTeam = button.dataset.toTeam;
@@ -280,7 +278,7 @@ function renderAdminTeamBoard() {
     if (!player) return;
     const targetCount = adminTeamAssignments.filter(item => item.team === targetTeam).length;
     const sourceCount = adminTeamAssignments.filter(item => item.team === player.team).length;
-    if (Math.abs((sourceCount - 1) - (targetCount + 1)) > 2) return toast('จำนวนผู้เล่นสองทีมต้องต่างกันไม่เกิน 2 คนระ��[...]
+    if (Math.abs((sourceCount - 1) - (targetCount + 1)) > 2) return toast('จำนวนผู้เล่นสองทีมต้องต่างกันไม่เกิน 2 คนระหว่างการจัด', true);
     const targetNames = new Set(adminTeamAssignments.filter(item => item.team === targetTeam && item.id !== player.id).map(item => item.name === 'ป้อง' ? 'ปกป้อง' : item.name));
     const playerName = player.name === 'ป้อง' ? 'ปกป้อง' : player.name;
     const conflict = teamSeparationPairs.find(([first, second]) =>
@@ -299,7 +297,7 @@ async function renderAdminTeams() {
     const data = await api('/api/admin/teams');
     document.querySelector('#adminRoundLabel').textContent = data.round.title;
     adminTeamAssignments = data.assignments;
-    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">TEAM BUILDER</p><h1>ปรับทีม</h1><p class="muted">ย้ายผู้เล่นเองหรื�[...]
+    node.innerHTML = `<section class="admin-page-heading"><div><p class="eyebrow">TEAM BUILDER</p><h1>ปรับทีม</h1><p class="muted">ย้ายผู้เล่นเองหรือสุ่มทีมใหม่ได้</p></div><div class="admin-team-actions"><button id="randomizeAdminTeams" class="button secondary">สุ่มทีมใหม่ ↻</button><button id="saveAdminTeams" class="button primary">บันทึกทีม</button></div></section><p class="admin-save-state">${data.customized ? 'กำลังแสดงทีมที่บันทึกไว้' : 'เริ่มจากทีมที่ระบบจัดให้สมดุล'}</p><div id="adminTeamBoard" class="admin-team-board"></div>`;
     renderAdminTeamBoard();
     document.querySelector('#randomizeAdminTeams').addEventListener('click', async event => {
       const button = event.currentTarget;
@@ -334,7 +332,7 @@ document.querySelector('#loginForm').addEventListener('submit', async event => {
   const submitButton = event.currentTarget.querySelector('button[type="submit"]');
   submitButton.disabled = true;
   try {
-    const result = await api('/api/login', { method: 'POST', body: JSON.stringify({ name: document.querySelector('#loginName').value.trim(), password: document.querySelector('#loginPassword').value }) });
+    const result = await api('/api/login', { method: 'POST', body: JSON.stringify({ name: document.querySelector('#loginName').value, password: document.querySelector('#loginPassword').value }) });
     await startApp(result.player);
   } catch (error) { errorNode.textContent = error.message; }
   finally { submitButton.disabled = false; }
@@ -369,6 +367,11 @@ document.querySelector('#closeProfile').addEventListener('click', () => profileD
 profileDialog.addEventListener('click', event => { if (event.target === profileDialog) profileDialog.close(); });
 
 async function boot() {
+  try {
+    const { players: roster } = await api('/api/roster');
+    const select = document.querySelector('#loginName');
+    select.innerHTML += roster.map(player => `<option value="${esc(player.name)}">${esc(player.name)}</option>`).join('');
+  } catch (error) { document.querySelector('#loginError').textContent = error.message; }
   try {
     const { admin } = await api('/api/admin/me');
     await startAdmin(admin);
