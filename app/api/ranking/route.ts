@@ -10,9 +10,8 @@ export async function GET() {
     if (!await currentPlayer()) return unauthorized();
     const round = await getActiveRound();
     const { rows } = await pool.query(
-      `SELECT p.id, p.name, p.positions, r.weighted_score, r.fitness, r.passing,
-        r.first_touch, r.shooting, r.ball_control, r.keeper_distribution, r.keeper_cutting,
-        r.keeper_high_ball, r.keeper_low_ball, r.keeper_reflex, r.assessor_count
+      `SELECT p.id, p.name, p.positions, r.weighted_score, r.pace, r.passing,
+        r.dribbling, r.shooting, r.defending, r.physicality, r.assessor_count
        FROM player_rankings r JOIN players p ON p.id = r.player_id
        WHERE r.round_id = $1 ORDER BY r.weighted_score DESC, p.id`, [round.id]
     );
