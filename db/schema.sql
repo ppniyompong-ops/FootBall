@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS player_assessments (
   keeper_high_ball SMALLINT CHECK (keeper_high_ball BETWEEN 1 AND 10),
   keeper_low_ball SMALLINT CHECK (keeper_low_ball BETWEEN 1 AND 10),
   keeper_reflex SMALLINT CHECK (keeper_reflex BETWEEN 1 AND 10),
+  keeper_kick SMALLINT CHECK (keeper_kick BETWEEN 1 AND 10),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT no_self_assessment CHECK (evaluator_id <> player_id),
   CONSTRAINT one_assessment_per_player_per_round UNIQUE (round_id, evaluator_id, player_id)
@@ -80,6 +81,7 @@ CREATE TABLE IF NOT EXISTS player_rankings (
   keeper_distribution NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_positioning NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_penalty NUMERIC(5,2) NOT NULL DEFAULT 0,
+  keeper_kick NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_cutting NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_high_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_low_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
@@ -113,7 +115,8 @@ ALTER TABLE player_assessments
   ADD COLUMN IF NOT EXISTS keeper_cutting SMALLINT CHECK (keeper_cutting BETWEEN 1 AND 10),
   ADD COLUMN IF NOT EXISTS keeper_high_ball SMALLINT CHECK (keeper_high_ball BETWEEN 1 AND 10),
   ADD COLUMN IF NOT EXISTS keeper_low_ball SMALLINT CHECK (keeper_low_ball BETWEEN 1 AND 10),
-  ADD COLUMN IF NOT EXISTS keeper_reflex SMALLINT CHECK (keeper_reflex BETWEEN 1 AND 10);
+  ADD COLUMN IF NOT EXISTS keeper_reflex SMALLINT CHECK (keeper_reflex BETWEEN 1 AND 10),
+  ADD COLUMN IF NOT EXISTS keeper_kick SMALLINT CHECK (keeper_kick BETWEEN 1 AND 10);
 
 ALTER TABLE player_rankings
   ADD COLUMN IF NOT EXISTS pace NUMERIC(5,2) NOT NULL DEFAULT 0,
@@ -126,7 +129,8 @@ ALTER TABLE player_rankings
   ADD COLUMN IF NOT EXISTS keeper_low_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_reflex NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_positioning NUMERIC(5,2) NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS keeper_penalty NUMERIC(5,2) NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS keeper_penalty NUMERIC(5,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS keeper_kick NUMERIC(5,2) NOT NULL DEFAULT 0;
 
 -- Rename the roster entry without changing its player id or any related data.
 -- If both names already exist, stop safely rather than merging or deleting scores.
