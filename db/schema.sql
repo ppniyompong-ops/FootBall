@@ -120,24 +120,23 @@ ALTER TABLE player_rankings
   ADD COLUMN IF NOT EXISTS keeper_low_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_reflex NUMERIC(5,2) NOT NULL DEFAULT 0;
 
--- Apply the FC six-attribute reset exactly once. This removes every old
--- assessment and cached ranking, drops saved team assignments, and removes โช.
-CREATE TABLE IF NOT EXISTS app_migrations (
-  version TEXT PRIMARY KEY,
-  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-DO $fc_six_stats_reset$
+-- Rename the roster entry without changing its player id or any related data.
+-- If both names already exist, stop safely rather than merging or deleting scores.
+DO $rename_player$
+DECLARE
+  old_player_exists BOOLEAN;
+  new_player_exists BOOLEAN;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM app_migrations WHERE version = 'fc-six-stats-reset-v1') THEN
-    DELETE FROM player_assessments;
-    DELETE FROM player_rankings;
-    DELETE FROM team_assignments;
-    DELETE FROM players WHERE name = 'โช';
-    INSERT INTO app_migrations (version) VALUES ('fc-six-stats-reset-v1');
+  SELECT EXISTS (SELECT 1 FROM players WHERE name = 'แปง') INTO old_player_exists;
+  SELECT EXISTS (SELECT 1 FROM players WHERE name = 'โช') INTO new_player_exists;
+
+  IF old_player_exists AND new_player_exists THEN
+    RAISE EXCEPTION 'Cannot rename แปง to โช: both player records already exist. Resolve the duplicate manually; no scores were changed.';
+  ELSIF old_player_exists THEN
+    UPDATE players SET name = 'โช' WHERE name = 'แปง';
   END IF;
 END
-$fc_six_stats_reset$;
+$rename_player$;
 
 -- Merge the duplicate roster entry into the canonical player while retaining
 -- the newest non-duplicate assessment and any manual team assignment.
