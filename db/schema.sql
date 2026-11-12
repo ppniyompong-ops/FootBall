@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS player_assessments (
   ball_control SMALLINT CHECK (ball_control BETWEEN 1 AND 10),
   keeper_distribution SMALLINT CHECK (keeper_distribution BETWEEN 1 AND 10),
   keeper_cutting SMALLINT CHECK (keeper_cutting BETWEEN 1 AND 10),
+  keeper_triangle SMALLINT CHECK (keeper_triangle BETWEEN 1 AND 10),
   keeper_high_ball SMALLINT CHECK (keeper_high_ball BETWEEN 1 AND 10),
   keeper_low_ball SMALLINT CHECK (keeper_low_ball BETWEEN 1 AND 10),
   keeper_reflex SMALLINT CHECK (keeper_reflex BETWEEN 1 AND 10),
@@ -77,6 +78,7 @@ CREATE TABLE IF NOT EXISTS player_rankings (
   ball_control NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_distribution NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_cutting NUMERIC(5,2) NOT NULL DEFAULT 0,
+  keeper_triangle NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_high_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_low_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   keeper_reflex NUMERIC(5,2) NOT NULL DEFAULT 0,
@@ -105,6 +107,7 @@ ALTER TABLE player_assessments
   ALTER COLUMN ball_control DROP NOT NULL,
   ADD COLUMN IF NOT EXISTS keeper_distribution SMALLINT CHECK (keeper_distribution BETWEEN 1 AND 10),
   ADD COLUMN IF NOT EXISTS keeper_cutting SMALLINT CHECK (keeper_cutting BETWEEN 1 AND 10),
+  ADD COLUMN IF NOT EXISTS keeper_triangle SMALLINT CHECK (keeper_triangle BETWEEN 1 AND 10),
   ADD COLUMN IF NOT EXISTS keeper_high_ball SMALLINT CHECK (keeper_high_ball BETWEEN 1 AND 10),
   ADD COLUMN IF NOT EXISTS keeper_low_ball SMALLINT CHECK (keeper_low_ball BETWEEN 1 AND 10),
   ADD COLUMN IF NOT EXISTS keeper_reflex SMALLINT CHECK (keeper_reflex BETWEEN 1 AND 10);
@@ -118,7 +121,8 @@ ALTER TABLE player_rankings
   ADD COLUMN IF NOT EXISTS keeper_cutting NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_high_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS keeper_low_ball NUMERIC(5,2) NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS keeper_reflex NUMERIC(5,2) NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS keeper_reflex NUMERIC(5,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS keeper_triangle NUMERIC(5,2) NOT NULL DEFAULT 0;
 
 -- Rename the roster entry without changing its player id or any related data.
 -- If both names already exist, stop safely rather than merging or deleting scores.
