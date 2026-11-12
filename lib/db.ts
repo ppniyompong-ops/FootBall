@@ -68,11 +68,11 @@ export async function getActiveRound() {
 export async function refreshRanking(roundId: number) {
   await pool.query(
     `INSERT INTO player_rankings (
-       round_id, player_id, weighted_score, pace, passing, dribbling, shooting, defending, physicality, keeper_positioning, keeper_cutting, keeper_triangle, keeper_high_ball, keeper_low_ball, keeper_penalty, assessor_count, calculated_at
+       round_id, player_id, weighted_score, pace, passing, dribbling, shooting, defending, physicality, keeper_positioning, keeper_cutting, keeper_kick, keeper_high_ball, keeper_low_ball, keeper_penalty, assessor_count, calculated_at
      )
      SELECT $1, p.id,
        CASE WHEN UPPER(p.positions) ~ '(^|[/,[:space:]])GK($|[/,[:space:]])'
-         THEN ROUND((COALESCE(AVG(a.keeper_positioning), 0) + COALESCE(AVG(a.keeper_cutting), 0) + COALESCE(AVG(a.keeper_triangle), 0) + COALESCE(AVG(a.keeper_high_ball), 0) + COALESCE(AVG(a.keeper_low_ball), 0) + COALESCE(AVG(a.keeper_penalty), 0)) / 6.0, 2)
+         THEN ROUND((COALESCE(AVG(a.keeper_positioning), 0) + COALESCE(AVG(a.keeper_cutting), 0) + COALESCE(AVG(a.keeper_kick), 0) + COALESCE(AVG(a.keeper_high_ball), 0) + COALESCE(AVG(a.keeper_low_ball), 0) + COALESCE(AVG(a.keeper_penalty), 0)) / 6.0, 2)
          ELSE ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) + COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) + COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2)
        END,
        ROUND(COALESCE(AVG(a.pace), 0), 2),
@@ -83,7 +83,7 @@ export async function refreshRanking(roundId: number) {
        ROUND(COALESCE(AVG(a.physicality), 0), 2),
        ROUND(COALESCE(AVG(a.keeper_positioning), 0), 2),
        ROUND(COALESCE(AVG(a.keeper_cutting), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_triangle), 0), 2),
+       ROUND(COALESCE(AVG(a.keeper_kick), 0), 2),
        ROUND(COALESCE(AVG(a.keeper_high_ball), 0), 2),
        ROUND(COALESCE(AVG(a.keeper_low_ball), 0), 2),
        ROUND(COALESCE(AVG(a.keeper_penalty), 0), 2),
@@ -103,7 +103,7 @@ export async function refreshRanking(roundId: number) {
        physicality = EXCLUDED.physicality,
        keeper_positioning = EXCLUDED.keeper_positioning,
        keeper_cutting = EXCLUDED.keeper_cutting,
-       keeper_triangle = EXCLUDED.keeper_triangle,
+       keeper_kick = EXCLUDED.keeper_kick,
        keeper_high_ball = EXCLUDED.keeper_high_ball,
        keeper_low_ball = EXCLUDED.keeper_low_ball,
        keeper_penalty = EXCLUDED.keeper_penalty,
