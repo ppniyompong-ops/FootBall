@@ -74,7 +74,7 @@ export async function refreshRanking(roundId: number) {
        CASE WHEN UPPER(p.positions) ~ '(^|[/,[:space:]])GK($|[/,[:space:]])'
          THEN ROUND((COALESCE(AVG(a.keeper_positioning), 0) + COALESCE(AVG(a.keeper_cutting), 0) + COALESCE(AVG(a.keeper_kick), 0) + COALESCE(AVG(a.keeper_high_ball), 0) + COALESCE(AVG(a.keeper_low_ball), 0) + COALESCE(AVG(a.keeper_penalty), 0)) / 6.0, 2)
          ELSE ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) + COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) + COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2)
-       END,
+       END * 10,
        ROUND(COALESCE(AVG(a.pace), 0), 2),
        ROUND(COALESCE(AVG(a.passing), 0), 2),
        ROUND(COALESCE(AVG(a.dribbling), 0), 2),
