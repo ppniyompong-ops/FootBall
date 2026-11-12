@@ -9,7 +9,7 @@ const playerCriteria = [
 const goalkeeperCriteria = [
   { key: 'keeper_positioning', storage: 'keeper_positioning', label: 'การยืนตำแหน่งและปิดมุม', en: 'POSITIONING & ANGLES' },
   { key: 'keeper_cutting', storage: 'keeper_cutting', label: 'การออกมาตัดบอลและดวล 1 ต่อ 1', en: 'SWEEPING & 1V1' },
-  { key: 'keeper_triangle', storage: 'keeper_triangle', label: 'การรับบอลแบบสามเหลี่ยม', en: 'TRIANGLE HAND CATCH' },
+  { key: 'keeper_kick', storage: 'keeper_kick', label: 'การเตะเปิดบอล', en: 'KICKING & DISTRIBUTION' },
   { key: 'keeper_high_ball', storage: 'keeper_high_ball', label: 'การรับลูกโด่งและลูกครอส', en: 'HIGH BALL HANDLING' },
   { key: 'keeper_low_ball', storage: 'keeper_low_ball', label: 'การรับลูกเลียดและรีเฟล็กซ์', en: 'LOW SAVES & REFLEXES' },
   { key: 'keeper_penalty', storage: 'keeper_penalty', label: 'การเซฟลูกจุดโทษ', en: 'PENALTY SAVES' }
