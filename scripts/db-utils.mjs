@@ -42,47 +42,29 @@ export async function initializeDatabase() {
 export async function refreshRanking(roundId) {
   await pool.query(
     `INSERT INTO player_rankings (
-       round_id, player_id, weighted_score, pace, passing, dribbling, shooting, defending, physicality, keeper_positioning, keeper_cutting, keeper_kick, keeper_high_ball, keeper_low_ball, keeper_penalty, assessor_count, calculated_at
+       round_id, player_id, weighted_score, pace, passing, dribbling,
+       shooting, defending, physicality, assessor_count, calculated_at
      )
      SELECT $1, p.id,
-       CASE WHEN UPPER(p.positions) ~ '(^|[/,[:space:]])GK($|[/,[:space:]])'
-         THEN ROUND((COALESCE(AVG(a.keeper_positioning), 0) + COALESCE(AVG(a.keeper_cutting), 0) + COALESCE(AVG(a.keeper_kick), 0) + COALESCE(AVG(a.keeper_high_ball), 0) + COALESCE(AVG(a.keeper_low_ball), 0) + COALESCE(AVG(a.keeper_penalty), 0)) / 6.0, 2)
-         ELSE ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) + COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) + COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2)
-       END,
+       ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) +
+         COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) +
+         COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2),
        ROUND(COALESCE(AVG(a.pace), 0), 2),
        ROUND(COALESCE(AVG(a.passing), 0), 2),
        ROUND(COALESCE(AVG(a.dribbling), 0), 2),
        ROUND(COALESCE(AVG(a.shooting), 0), 2),
        ROUND(COALESCE(AVG(a.defending), 0), 2),
        ROUND(COALESCE(AVG(a.physicality), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_positioning), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_cutting), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_kick), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_high_ball), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_low_ball), 0), 2),
-       ROUND(COALESCE(AVG(a.keeper_penalty), 0), 2),
-       COUNT(a.id)::INTEGER,
-       NOW()
+       COUNT(a.id)::INTEGER, NOW()
      FROM players p
-     LEFT JOIN player_assessments a
-       ON a.player_id = p.id AND a.round_id = $1
+     LEFT JOIN player_assessments a ON a.player_id=p.id AND a.round_id=$1
      GROUP BY p.id
      ON CONFLICT (round_id, player_id) DO UPDATE SET
-       weighted_score = EXCLUDED.weighted_score,
-       pace = EXCLUDED.pace,
-       passing = EXCLUDED.passing,
-       dribbling = EXCLUDED.dribbling,
-       shooting = EXCLUDED.shooting,
-       defending = EXCLUDED.defending,
-       physicality = EXCLUDED.physicality,
-       keeper_positioning = EXCLUDED.keeper_positioning,
-       keeper_cutting = EXCLUDED.keeper_cutting,
-       keeper_kick = EXCLUDED.keeper_kick,
-       keeper_high_ball = EXCLUDED.keeper_high_ball,
-       keeper_low_ball = EXCLUDED.keeper_low_ball,
-       keeper_penalty = EXCLUDED.keeper_penalty,
-       assessor_count = EXCLUDED.assessor_count,
-       calculated_at = NOW()`,
+       weighted_score=EXCLUDED.weighted_score, pace=EXCLUDED.pace,
+       passing=EXCLUDED.passing, dribbling=EXCLUDED.dribbling,
+       shooting=EXCLUDED.shooting, defending=EXCLUDED.defending,
+       physicality=EXCLUDED.physicality, assessor_count=EXCLUDED.assessor_count,
+       calculated_at=NOW()`,
     [roundId]
   );
 }
