@@ -13,10 +13,10 @@ INSERT INTO players (name, positions) VALUES
   ('เช่', 'AMF/ST'),
   ('แผน', 'CDM/CAM'),
   ('แมง', 'LW/RM'),
-  ('แปง', 'CB/ST'),
+  ('โช', 'CB/ST'),
   ('นิว', 'LB/RB'),
   ('กิต', 'CB/CDM')
-ON CONFLICT (name) DO UPDATE SET positions = EXCLUDED.positions;
+ON CONFLICT (name) DO UPDATE SET positions = EXCLUDED.positions WHERE players.name <> 'โช';
 
 INSERT INTO assessment_rounds (title, is_active)
 SELECT 'รอบที่ 1', TRUE
