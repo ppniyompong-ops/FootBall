@@ -14,6 +14,7 @@ export async function GET() {
     const { rows } = await pool.query(
       `SELECT a.id, evaluator.name AS evaluator_name, player.name AS player_name, player.positions AS player_positions,
          a.pace, a.passing, a.dribbling, a.shooting, a.defending, a.physicality,
+         a.keeper_cutting, a.keeper_triangle, a.keeper_high_ball, a.keeper_low_ball, a.keeper_reflex, a.keeper_distribution,
          a.updated_at
        FROM player_assessments a
        JOIN players evaluator ON evaluator.id = a.evaluator_id
