@@ -6,7 +6,17 @@ const playerCriteria = [
   { key: 'defending', storage: 'defending', label: 'การป้องกัน', en: 'DEFENDING' },
   { key: 'physicality', storage: 'physicality', label: 'ความแข็งแกร่ง', en: 'PHYSICALITY' }
 ];
-const criteriaFor = () => playerCriteria;
+const goalkeeperCriteria = [
+  { key: 'keeper_positioning', storage: 'keeper_positioning', label: 'การยืนตำแหน่งและปิดมุม', en: 'POSITIONING & ANGLES' },
+  { key: 'keeper_cutting', storage: 'keeper_cutting', label: 'การออกมาตัดบอลและดวล 1 ต่อ 1', en: 'SWEEPING & 1V1' },
+  { key: 'keeper_kick', storage: 'keeper_kick', label: 'การเตะเปิดบอล', en: 'KICKING & DISTRIBUTION' },
+  { key: 'keeper_high_ball', storage: 'keeper_high_ball', label: 'การรับลูกโด่งและลูกครอส', en: 'HIGH BALL HANDLING' },
+  { key: 'keeper_low_ball', storage: 'keeper_low_ball', label: 'การรับลูกเลียดและรีเฟล็กซ์', en: 'LOW SAVES & REFLEXES' },
+  { key: 'keeper_penalty', storage: 'keeper_penalty', label: 'การเซฟลูกจุดโทษ', en: 'PENALTY SAVES' }
+];
+const criteriaFor = player => String(player?.positions || '').toUpperCase().split(/[\/,\s]+/).includes('GK')
+  ? goalkeeperCriteria
+  : playerCriteria;
 const teamSeparationPairs = [['เช่', 'พอร์ช'], ['ปกป้อง', 'กังฟู']];
 const loginView = document.querySelector('#loginView');
 const appView = document.querySelector('#appView');
@@ -128,8 +138,8 @@ async function renderDashboard() {
 
 function rankingTable(rows, showCount = true) {
   if (!rows.length) return '<div class="empty-state">ยังไม่มีข้อมูลอันดับ</div>';
-  const statHeaders = playerCriteria.map(item => `<th>${item.en}</th>`).join('');
-  return `<table><thead><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ตำแหน่ง</th>${statHeaders}<th>คะแนนรวม /10</th>${showCount ? '<th>ผู้ประเมิน</th>' : ''}</tr></thead><tbody>${rows.map(player => `<tr class="clickable-row" data-player="${player.id}"><td><span class="rank-badge ${player.rank <= 3 ? `top-${player.rank}` : ''}">${String(player.rank).padStart(2, '0')}</span></td><td><span class="table-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="table-player-name"><b>${esc(player.name)}</b>${player.award ? `<small class="fun-award">${esc(player.award)}</small>` : ''}</span>${player.id === currentPlayer.id ? '<em>YOU</em>' : ''}</span></td><td><span class="position-tag">${esc(player.positions)}</span></td>${playerCriteria.map(item => `<td>${score(player[item.storage])}</td>`).join('')}<td><b class="score-cell">${score(player.weighted_score)}</b></td>${showCount ? `<td class="muted">${player.assessor_count}</td>` : ''}</tr>`).join('')}</tbody></table>`;
+  const statHeaders = Array.from({ length: 6 }, (_, index) => `<th>เกณฑ์ ${index + 1}</th>`).join('');
+  return `<table><thead><tr><th>อันดับ</th><th>ผู้เล่น</th><th>ตำแหน่ง</th>${statHeaders}<th>คะแนนรวม /10</th>${showCount ? '<th>ผู้ประเมิน</th>' : ''}</tr></thead><tbody>${rows.map(player => `<tr class="clickable-row" data-player="${player.id}"><td><span class="rank-badge ${player.rank <= 3 ? `top-${player.rank}` : ''}">${String(player.rank).padStart(2, '0')}</span></td><td><span class="table-player"><span class="player-avatar">${esc(player.name.slice(0,1))}</span><span class="table-player-name"><b>${esc(player.name)}</b>${player.award ? `<small class="fun-award">${esc(player.award)}</small>` : ''}</span>${player.id === currentPlayer.id ? '<em>YOU</em>' : ''}</span></td><td><span class="position-tag">${esc(player.positions)}</span></td>${criteriaFor(player).map(item => `<td title="${item.label}">${score(player[item.storage])}</td>`).join('')}<td><b class="score-cell">${score(player.weighted_score)}</b></td>${showCount ? `<td class="muted">${player.assessor_count}</td>` : ''}</tr>`).join('')}</tbody></table>`;
 }
 async function renderRanking() {
   content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">LEADERBOARD</p><h1>อันดับผู้เล่น</h1><p class="muted">จัดอันดับจากค่าเฉลี่ย 6 ค่าสเตตัส FC โดยให้น้ำหนักเท่ากันทุกด้าน</p></div><div class="round-pill"><span class="live-dot"></span><span id="rankingRound">กำลังโหลด</span></div></section><section class="panel ranking-panel"><div class="ranking-summary"><div><span class="eyebrow">CLASS RANKING</span><b id="rankingPlayerCount">— <small>PLAYERS</small></b></div><span class="privacy-note">ผู้เล่นทั่วไปไม่เห็นชื่อผู้ให้คะแนน</span></div><div id="rankingTable" class="table-wrap">กำลังโหลด…</div></section>`;
@@ -148,7 +158,7 @@ function assessmentCard(player) {
 }
 
 async function renderAssessment() {
-  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">PLAYER ASSESSMENT</p><h1>ประเมินเพื่อน</h1><p class="muted">ให้คะแนน 1–10 ตาม 6 ค่าสเตตัส FC ทุกตำแหน่งใช้เกณฑ์เดียวกัน</p></div><span class="assessment-counter">${assessments.size}/${players.length} <small>คน</small></span></section><div class="assessment-layout"><section class="panel player-select-panel"><div class="panel-head"><div><p class="eyebrow">CLASSMATES</p><h2>เลือกผู้เล่น</h2></div></div><div class="search-wrap"><span>⌕</span><input id="playerSearch" placeholder="ค้นหาชื่อเล่น" autocomplete="off"></div><div id="assessmentList" class="assessment-list"></div></section><section class="panel assessment-form-panel" id="assessmentFormPanel"><div class="empty-form"><div class="empty-ball">◎</div><h2>เลือกเพื่อนเพื่อเริ่มประเมิน</h2><p class="muted">คุณประเมินตัวเองไม่ได้ และแก้ไขคะแนนเดิมได้เสมอ</p></div></section></div>`;
+  content.innerHTML = `<section class="page-heading"><div><p class="eyebrow">PLAYER ASSESSMENT</p><h1>ประเมินเพื่อน</h1><p class="muted">ให้คะแนน 1–10 ตาม 6 ทักษะเฉพาะตำแหน่ง (GK ใช้เกณฑ์ผู้รักษาประตู)</p></div><span class="assessment-counter">${assessments.size}/${players.length} <small>คน</small></span></section><div class="assessment-layout"><section class="panel player-select-panel"><div class="panel-head"><div><p class="eyebrow">CLASSMATES</p><h2>เลือกผู้เล่น</h2></div></div><div class="search-wrap"><span>⌕</span><input id="playerSearch" placeholder="ค้นหาชื่อเล่น" autocomplete="off"></div><div id="assessmentList" class="assessment-list"></div></section><section class="panel assessment-form-panel" id="assessmentFormPanel"><div class="empty-form"><div class="empty-ball">◎</div><h2>เลือกเพื่อนเพื่อเริ่มประเมิน</h2><p class="muted">คุณประเมินตัวเองไม่ได้ และแก้ไขคะแนนเดิมได้เสมอ</p></div></section></div>`;
   renderAssessmentList(players);
   document.querySelector('#playerSearch').addEventListener('input', event => renderAssessmentList(players.filter(player => player.name.includes(event.target.value.trim()) || player.positions.toLowerCase().includes(event.target.value.trim().toLowerCase()))));
 }

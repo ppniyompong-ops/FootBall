@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
     const target = await pool.query('SELECT id, positions FROM players WHERE id = $1', [playerId]);
     if (!target.rows[0]) return NextResponse.json({ error: 'ไม่พบผู้เล่นที่เลือก' }, { status: 404 });
     const round = await getActiveRound();
-    const keys = ['pace', 'passing', 'dribbling', 'shooting', 'defending', 'physicality'];
+    const isGoalkeeper = String(target.rows[0].positions || '').toUpperCase().split(/[\/,\s]+/).includes('GK');
+    const keys = isGoalkeeper
+      ? ["keeper_positioning","keeper_cutting","keeper_kick","keeper_high_ball","keeper_low_ball","keeper_penalty"]
+      : ["pace","passing","dribbling","shooting","defending","physicality"];
     const scores = keys.map(key => Number(body[key]));
     if (scores.some(score => !Number.isInteger(score) || score < 1 || score > 10)) {
       return badRequest('คะแนนทุกด้านต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 10');
