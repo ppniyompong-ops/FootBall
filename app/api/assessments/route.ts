@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const round = await getActiveRound();
     const isGoalkeeper = String(target.rows[0].positions || '').toUpperCase().split(/[\/,\s]+/).includes('GK');
     const keys = isGoalkeeper
-      ? ["keeper_positioning","keeper_cutting","keeper_triangle","keeper_high_ball","keeper_low_ball","keeper_penalty"]
+      ? ["keeper_positioning","keeper_cutting","keeper_kick","keeper_high_ball","keeper_low_ball","keeper_penalty"]
       : ["pace","passing","dribbling","shooting","defending","physicality"];
     const scores = keys.map(key => Number(body[key]));
     if (scores.some(score => !Number.isInteger(score) || score < 1 || score > 10)) {
