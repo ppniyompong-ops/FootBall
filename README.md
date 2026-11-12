@@ -12,7 +12,7 @@
 - แยก เช่ กับ พอร์ช และ ปกป้อง กับ กังฟู ไว้คนละทีมทั้งตอนจัดอัตโนมัติและตอนผู้ดูแลบันทึกทีม
 - จัดผู้เล่นเป็น 2 ทีมด้วยการค้นหาชุดแบ่งที่มีผลรวมคะแนนใกล้กันที่สุด ไม่ใช้ตำแหน่งเป็นเงื่อนไข
 - เก็บข้อมูลเป็นรายรอบใน Neon; บันทึกคะแนนแล้วคำนวณอันดับทันที
-- GitHub Actions ซิงก์ตารางอันดับจากคะแนนต้นทางทุกชั่วโมง
+- GitHub Actions ซิงก์ตารางอันดับจากคะแนนต้นทางทุกชั่วโมง และ ping `/health` ทุก 5 นาที
 
 ## Deploy ผ่าน GitHub และ Render
 
@@ -23,7 +23,8 @@
 5. Deploy Blueprint จะสร้าง Web Service บน Render
 6. ใน GitHub ไปที่ **Settings → Secrets and variables → Actions** แล้วเพิ่ม repository secret ชื่อ `DATABASE_URL` โดยใช้ Neon connection string เดียวกัน
 7. GitHub Actions จะ rebuild อันดับทุกชั่วโมงที่นาที 17 UTC; กด **Actions → Refresh cached rankings → Run workflow** เพื่อสั่งรันเองได้
-8. เปิด URL ของ Web Service; health check อยู่ที่ `/health`
+8. เพิ่ม repository secret `APP_URL` เป็น URL หลักของ Render Web Service (เช่น `https://your-service.onrender.com` โดยไม่ต้องต่อ `/health`)
+9. เปิด URL ของ Web Service; health check อยู่ที่ `/health` และ GitHub Actions จะเรียกทุก 5 นาทีเพื่อป้องกัน instance idle
 
 Render Blueprint จะถาม `DATABASE_URL` และ `ADMIN_PASSWORD` ระหว่างสร้างระบบ หากเปลี่ยน `SHARED_PASSWORD` ให้ใช้ค่าที่กำหนดไว้แทน `1234` และอย่าบันทึกรหัสผ่านจริงลง GitHub
 
