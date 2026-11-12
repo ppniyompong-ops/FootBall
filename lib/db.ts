@@ -67,13 +67,51 @@ export async function getActiveRound() {
 
 export async function refreshRanking(roundId: number) {
   await pool.query(
-    `INSERT INTO player_rankings (
+    `WITH position_weights AS (
+       SELECT p.id,
+         AVG(w.pace_weight) AS pace_weight,
+         AVG(w.passing_weight) AS passing_weight,
+         AVG(w.dribbling_weight) AS dribbling_weight,
+         AVG(w.shooting_weight) AS shooting_weight,
+         AVG(w.defending_weight) AS defending_weight,
+         AVG(w.physicality_weight) AS physicality_weight
+       FROM players p
+       CROSS JOIN LATERAL regexp_split_to_table(UPPER(p.positions), '[/,[:space:]]+') AS pos(code)
+       JOIN (VALUES
+         ('ST',15,5,10,40,5,25), ('CF',15,10,15,35,5,20),
+         ('LW',25,15,25,20,5,10), ('RW',25,15,25,20,5,10),
+         ('LWF',25,15,25,20,5,10), ('RWF',25,15,25,20,5,10),
+         ('CAM',10,25,25,20,5,15), ('AMF',10,25,25,20,5,15),
+         ('CM',10,25,15,10,20,20),
+         ('CDM',10,15,10,5,35,25), ('DM',10,15,10,5,35,25),
+         ('CB',10,10,5,5,40,30),
+         ('LB',20,15,10,5,25,25), ('RB',20,15,10,5,25,25),
+         ('LWB',20,15,10,5,25,25), ('RWB',20,15,10,5,25,25)
+       ) AS w(position_code, pace_weight, passing_weight, dribbling_weight, shooting_weight, defending_weight, physicality_weight)
+         ON w.position_code = pos.code
+       GROUP BY p.id
+     )
+     INSERT INTO player_rankings (
        round_id, player_id, weighted_score, pace, passing, dribbling, shooting, defending, physicality, keeper_positioning, keeper_cutting, keeper_kick, keeper_high_ball, keeper_low_ball, keeper_penalty, assessor_count, calculated_at
      )
      SELECT $1, p.id,
        CASE WHEN UPPER(p.positions) ~ '(^|[/,[:space:]])GK($|[/,[:space:]])'
-         THEN ROUND((COALESCE(AVG(a.keeper_positioning), 0) + COALESCE(AVG(a.keeper_cutting), 0) + COALESCE(AVG(a.keeper_kick), 0) + COALESCE(AVG(a.keeper_high_ball), 0) + COALESCE(AVG(a.keeper_low_ball), 0) + COALESCE(AVG(a.keeper_penalty), 0)) / 6.0, 2)
-         ELSE ROUND((COALESCE(AVG(a.pace), 0) + COALESCE(AVG(a.passing), 0) + COALESCE(AVG(a.dribbling), 0) + COALESCE(AVG(a.shooting), 0) + COALESCE(AVG(a.defending), 0) + COALESCE(AVG(a.physicality), 0)) / 6.0, 2)
+         THEN ROUND((
+           COALESCE(AVG(a.keeper_positioning),0) * 20 +
+           COALESCE(AVG(a.keeper_cutting),0) * 15 +
+           COALESCE(AVG(a.keeper_kick),0) * 15 +
+           COALESCE(AVG(a.keeper_high_ball),0) * 15 +
+           COALESCE(AVG(a.keeper_low_ball),0) * 20 +
+           COALESCE(AVG(a.keeper_penalty),0) * 15
+         ) / 10.0, 0)
+         ELSE ROUND((
+           COALESCE(AVG(a.pace),0) * COALESCE(pw.pace_weight,16.6667) +
+           COALESCE(AVG(a.passing),0) * COALESCE(pw.passing_weight,16.6667) +
+           COALESCE(AVG(a.dribbling),0) * COALESCE(pw.dribbling_weight,16.6667) +
+           COALESCE(AVG(a.shooting),0) * COALESCE(pw.shooting_weight,16.6667) +
+           COALESCE(AVG(a.defending),0) * COALESCE(pw.defending_weight,16.6667) +
+           COALESCE(AVG(a.physicality),0) * COALESCE(pw.physicality_weight,16.6667)
+         ) / 10.0, 0)
        END,
        ROUND(COALESCE(AVG(a.pace), 0), 2),
        ROUND(COALESCE(AVG(a.passing), 0), 2),
@@ -90,9 +128,10 @@ export async function refreshRanking(roundId: number) {
        COUNT(a.id)::INTEGER,
        NOW()
      FROM players p
-     LEFT JOIN player_assessments a
-       ON a.player_id = p.id AND a.round_id = $1
-     GROUP BY p.id
+     LEFT JOIN position_weights pw ON pw.id = p.id
+     LEFT JOIN player_assessments a ON a.player_id = p.id AND a.round_id = $1
+     GROUP BY p.id, p.positions, pw.pace_weight, pw.passing_weight, pw.dribbling_weight,
+       pw.shooting_weight, pw.defending_weight, pw.physicality_weight
      ON CONFLICT (round_id, player_id) DO UPDATE SET
        weighted_score = EXCLUDED.weighted_score,
        pace = EXCLUDED.pace,
