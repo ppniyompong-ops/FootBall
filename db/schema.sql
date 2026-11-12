@@ -138,70 +138,11 @@ BEGIN
 END
 $rename_player$;
 
--- Merge the duplicate roster entry into the canonical player while retaining
--- the newest non-duplicate assessment and any manual team assignment.
-DO $merge_players$
-DECLARE
-  canonical_id INTEGER;
-  duplicate_id INTEGER;
-BEGIN
-  SELECT id INTO canonical_id FROM players WHERE name = 'ปกป้อง' ORDER BY id LIMIT 1;
-  SELECT id INTO duplicate_id FROM players WHERE name = 'ป้อง' ORDER BY id LIMIT 1;
-
-  IF canonical_id IS NOT NULL AND duplicate_id IS NOT NULL THEN
-    DELETE FROM player_assessments a
-    WHERE CASE WHEN a.evaluator_id = duplicate_id THEN canonical_id ELSE a.evaluator_id END
-        = CASE WHEN a.player_id = duplicate_id THEN canonical_id ELSE a.player_id END;
-
-    DELETE FROM player_assessments
-    WHERE ctid IN (
-      SELECT ctid FROM (
-        SELECT ctid,
-          ROW_NUMBER() OVER (
-            PARTITION BY round_id,
-              CASE WHEN evaluator_id = duplicate_id THEN canonical_id ELSE evaluator_id END,
-              CASE WHEN player_id = duplicate_id THEN canonical_id ELSE player_id END
-            ORDER BY updated_at DESC NULLS LAST, ctid DESC
-          ) AS duplicate_number
-        FROM player_assessments
-      ) ranked
-      WHERE duplicate_number > 1
-    );
-
-    UPDATE player_assessments SET evaluator_id = canonical_id WHERE evaluator_id = duplicate_id;
-    UPDATE player_assessments SET player_id = canonical_id WHERE player_id = duplicate_id;
-    DELETE FROM player_rankings WHERE player_id = duplicate_id;
-    DELETE FROM team_assignments old
-    USING team_assignments kept
-    WHERE old.round_id = kept.round_id
-      AND old.player_id = duplicate_id
-      AND kept.player_id = canonical_id;
-    UPDATE team_assignments SET player_id = canonical_id WHERE player_id = duplicate_id;
-    DELETE FROM players WHERE id = duplicate_id;
-  END IF;
-END
-$merge_players$;
-
--- Bring forward unique keys that were absent from some legacy installations.
--- Keep the most recently updated assessment if an old database has duplicates.
-DELETE FROM player_assessments older
-USING player_assessments newer
-WHERE older.round_id = newer.round_id
-  AND older.evaluator_id = newer.evaluator_id
-  AND older.player_id = newer.player_id
-  AND (older.updated_at < newer.updated_at
-       OR (older.updated_at = newer.updated_at AND older.ctid < newer.ctid));
-
+-- Add uniqueness guarantees without deleting or rewriting existing assessment,
+-- ranking, or team-assignment rows. If legacy duplicates exist, fail safely so
+-- they can be reviewed manually instead of silently discarding user data.
 CREATE UNIQUE INDEX IF NOT EXISTS player_assessments_round_evaluator_player_unique
   ON player_assessments (round_id, evaluator_id, player_id);
-
--- Rankings are a cache derived from assessments, so duplicate cache rows can
--- be discarded safely before adding the key used by the upsert query.
-DELETE FROM player_rankings older
-USING player_rankings newer
-WHERE older.round_id = newer.round_id
-  AND older.player_id = newer.player_id
-  AND older.ctid < newer.ctid;
 
 CREATE UNIQUE INDEX IF NOT EXISTS player_rankings_round_player_unique
   ON player_rankings (round_id, player_id);
