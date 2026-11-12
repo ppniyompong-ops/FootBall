@@ -11,7 +11,7 @@ export async function GET() {
     const round = await getActiveRound();
     const { rows } = await pool.query(
       `SELECT p.id, p.name, p.positions, r.weighted_score, r.pace, r.passing,
-        r.dribbling, r.shooting, r.defending, r.physicality, r.assessor_count
+        r.dribbling, r.shooting, r.defending, r.physicality, r.keeper_cutting, r.keeper_triangle, r.keeper_high_ball, r.keeper_low_ball, r.keeper_reflex, r.keeper_distribution, r.assessor_count
        FROM player_rankings r JOIN players p ON p.id = r.player_id
        WHERE r.round_id = $1 ORDER BY r.weighted_score DESC, p.id`, [round.id]
     );
